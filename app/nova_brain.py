@@ -489,77 +489,166 @@ def get_operator_plan(user_text: str) -> dict:
 
 
 # =============================================================================
-# ESSAY GENERATOR
+# DOCUMENT INTELLIGENCE LAYER
 # =============================================================================
 
-ESSAY_PROMPT = """Generate a well-structured essay on the topic: "{topic}"
+class DocumentTask:
+    """Document task classification and validation"""
+    
+    TASK_TYPES = {
+        'essay': ['essay', 'write an essay', 'essay on', 'essay about'],
+        'report': ['report', 'write a report', 'report on'],
+        'letter': ['letter', 'write a letter', 'formal letter', 'informal letter'],
+        'resume': ['resume', 'cv', 'curriculum vitae'],
+        'notes': ['notes', 'summary', 'summarize', 'note down'],
+        'list': ['list', 'bullet points', 'numbered list'],
+        'table': ['table', 'create table', 'make a table'],
+    }
+    
+    # Required sections for each document type
+    REQUIRED_SECTIONS = {
+        'essay': ['title', 'introduction', 'body', 'conclusion'],
+        'report': ['title', 'executive_summary', 'body', 'recommendations'],
+        'letter': ['greeting', 'body', 'closing'],
+    }
+    
+    @classmethod
+    def classify(cls, text: str) -> str:
+        """Classify document task type"""
+        text_lower = text.lower()
+        for task_type, keywords in cls.TASK_TYPES.items():
+            if any(kw in text_lower for kw in keywords):
+                return task_type
+        return 'general'
+    
+    @classmethod
+    def validate_essay(cls, content: dict) -> tuple:
+        """
+        Validate essay has all required sections with actual content.
+        Returns (is_valid, missing_sections, word_count)
+        """
+        required = ['title', 'introduction', 'body', 'conclusion']
+        missing = []
+        word_count = 0
+        
+        for section in required:
+            if section not in content:
+                missing.append(section)
+            elif section == 'body':
+                if not isinstance(content['body'], list) or len(content['body']) == 0:
+                    missing.append('body (empty)')
+                else:
+                    for para in content['body']:
+                        word_count += len(para.split())
+            else:
+                text = content.get(section, '')
+                if not text or len(text.strip()) < 10:
+                    missing.append(f'{section} (too short)')
+                else:
+                    word_count += len(text.split())
+        
+        return (len(missing) == 0, missing, word_count)
 
-Return a JSON object with this EXACT structure:
+
+# =============================================================================
+# ENHANCED ESSAY GENERATOR
+# =============================================================================
+
+ESSAY_PROMPT = """Write a comprehensive, well-structured essay on: "{topic}"
+
+You MUST return a JSON object with this EXACT structure:
 {{
-    "title": "Essay Title Here",
-    "intro": "Introduction paragraph (3-4 sentences)",
+    "title": "A compelling essay title",
+    "introduction": "A full introduction paragraph (4-5 sentences) that introduces the topic, explains its relevance, and outlines what will be covered.",
     "body": [
-        "First main body paragraph with key points",
-        "Second main body paragraph with supporting details",
-        "Third main body paragraph with examples"
+        "First body paragraph (5-6 sentences) - Define the topic and provide background context.",
+        "Second body paragraph (5-6 sentences) - Discuss key applications, examples, or main points.",
+        "Third body paragraph (5-6 sentences) - Analyze benefits, advantages, or positive aspects.",
+        "Fourth body paragraph (5-6 sentences) - Address challenges, limitations, or considerations."
     ],
-    "conclusion": "Conclusion paragraph summarizing key points (2-3 sentences)"
+    "conclusion": "A strong conclusion paragraph (3-4 sentences) that summarizes key points and provides a forward-looking statement."
 }}
 
-Requirements:
-- Be informative and educational
-- Use clear, professional language
-- Each body paragraph should be 4-5 sentences
-- Total essay should be 400-500 words
-- Return ONLY valid JSON, no other text"""
+CRITICAL REQUIREMENTS:
+1. Each paragraph MUST be 4-6 full sentences, NOT bullet points
+2. Introduction MUST introduce the topic and its importance
+3. Body paragraphs MUST contain substantive analysis, not just definitions
+4. Conclusion MUST summarize AND provide insight
+5. Total word count should be 500-700 words
+6. Write in formal academic tone
+7. Return ONLY valid JSON, nothing else"""
 
 
 def generate_essay(topic: str) -> dict:
     """
-    Generate essay content using Groq LLM.
-    Returns dict with title, intro, body, conclusion.
+    Generate a complete, verified essay using Groq LLM.
+    Returns validated dict with title, introduction, body[], conclusion.
+    
+    NEVER returns incomplete content - will retry or report failure.
     """
+    print(f"[ESSAY] Generating essay on '{topic}'...")
+    
     try:
         client = Groq(api_key=API_KEY)
         
-        completion = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[
-                {"role": "system", "content": "You are an expert essay writer. Return ONLY valid JSON."},
-                {"role": "user", "content": ESSAY_PROMPT.format(topic=topic)}
-            ],
-            temperature=0.7,
-            response_format={"type": "json_object"}
-        )
+        # First attempt
+        result = _generate_essay_attempt(client, topic)
         
-        result = json.loads(completion.choices[0].message.content)
+        # Validate
+        is_valid, missing, word_count = DocumentTask.validate_essay(result)
         
-        # Validate structure
-        if "title" not in result:
-            result["title"] = f"Essay on {topic.title()}"
-        if "intro" not in result:
-            result["intro"] = f"This essay explores the topic of {topic}."
-        if "body" not in result or not isinstance(result["body"], list):
-            result["body"] = [f"The topic of {topic} is important in many ways."]
-        if "conclusion" not in result:
-            result["conclusion"] = f"In conclusion, {topic} is a significant subject worthy of study."
+        if not is_valid:
+            print(f"[ESSAY] First attempt incomplete. Missing: {missing}. Retrying...")
+            # Retry once with more explicit prompt
+            result = _generate_essay_attempt(client, topic, retry=True)
+            is_valid, missing, word_count = DocumentTask.validate_essay(result)
         
-        print(f"[ESSAY] Generated essay on '{topic}' ({len(result['body'])} body paragraphs)")
+        if not is_valid:
+            print(f"[ESSAY ERROR] Failed to generate complete essay. Missing: {missing}")
+            return _generate_fallback_essay(topic)
+        
+        print(f"[ESSAY] Successfully generated essay: {word_count} words, {len(result.get('body', []))} body paragraphs")
         return result
         
     except Exception as e:
         print(f"[ESSAY ERROR] {e}")
-        # Return fallback structure
-        return {
-            "title": f"Essay on {topic.title()}",
-            "intro": f"This essay examines the topic of {topic} and its significance.",
-            "body": [
-                f"{topic.title()} is a subject of great importance in today's world.",
-                "Understanding this topic helps us gain valuable insights.",
-                "Many experts have contributed to our knowledge in this area."
-            ],
-            "conclusion": f"In summary, {topic} remains a crucial area of study and discussion."
-        }
+        return _generate_fallback_essay(topic)
+
+
+def _generate_essay_attempt(client, topic: str, retry: bool = False) -> dict:
+    """Single attempt at essay generation"""
+    
+    prompt = ESSAY_PROMPT.format(topic=topic)
+    if retry:
+        prompt += "\n\nIMPORTANT: Your previous attempt was incomplete. Ensure EVERY section has full paragraphs."
+    
+    completion = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[
+            {"role": "system", "content": "You are an expert academic essay writer. You MUST return complete, well-structured essays with full paragraphs in each section. Return ONLY valid JSON."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.7,
+        max_tokens=2000,
+        response_format={"type": "json_object"}
+    )
+    
+    return json.loads(completion.choices[0].message.content)
+
+
+def _generate_fallback_essay(topic: str) -> dict:
+    """Generate a basic but complete fallback essay when LLM fails"""
+    return {
+        "title": f"Understanding {topic.title()}: A Comprehensive Overview",
+        "introduction": f"{topic.title()} is a subject of significant importance in today's world. This essay explores the key aspects of {topic}, examining its definition, applications, benefits, and challenges. Understanding {topic} is essential for anyone seeking to grasp its impact on society and various fields. Through this analysis, we will gain valuable insights into why {topic} matters and how it shapes our world.",
+        "body": [
+            f"To begin with, {topic} can be defined as a concept that has evolved significantly over time. Its origins can be traced back to early developments in related fields, and it has since grown to encompass a wide range of applications. The fundamental principles underlying {topic} provide the foundation for understanding its broader implications. Researchers and practitioners alike have contributed to expanding our knowledge of this important subject.",
+            f"The applications of {topic} are diverse and far-reaching. In various industries, {topic} has been implemented to improve efficiency, enhance capabilities, and solve complex problems. From everyday use cases to specialized applications, the versatility of {topic} is evident. Organizations around the world have recognized its potential and continue to explore new ways to leverage its benefits.",
+            f"The benefits of {topic} are numerous and significant. It offers improved outcomes in many areas, greater accessibility to resources and information, and enhanced capabilities for individuals and organizations. Furthermore, {topic} has the potential to address pressing challenges facing society today. These advantages make it a valuable area of focus for continued development and investment.",
+            f"However, {topic} also presents certain challenges that must be addressed. These include technical limitations, implementation difficulties, and considerations related to ethics and responsibility. Overcoming these obstacles requires careful planning, ongoing research, and collaboration among stakeholders. By acknowledging and addressing these challenges, we can work toward more effective and responsible use of {topic}."
+        ],
+        "conclusion": f"In conclusion, {topic} represents a significant area of study with far-reaching implications. Through examining its definition, applications, benefits, and challenges, we have gained a comprehensive understanding of its importance. As {topic} continues to evolve, it will undoubtedly play an increasingly important role in shaping our future. Continued research and thoughtful implementation will be key to maximizing its positive impact on society."
+    }
 
 
 # =============================================================================

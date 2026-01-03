@@ -773,103 +773,195 @@ class NovaOS:
 
     def write_pro_document(self, topic, content_dict):
         """
-        Write a clean, formatted document in Microsoft Word.
-        Proper formatting: Bold title, numbered sections, clean paragraphs.
+        Write a complete, verified essay in Microsoft Word.
+        
+        CRITICAL: This method ONLY reports success if content is actually written.
         
         Args:
             topic: The document title
-            content_dict: Dictionary with section names and paragraphs
+            content_dict: Dictionary with 'title', 'introduction', 'body' (list), 'conclusion'
         
         Returns:
-            Status message
+            Status message with actual word count and section count
         """
-        print(f"📝 WORD: Writing document about '{topic}'...")
+        print(f"📝 WORD: Writing complete essay on '{topic}'...")
+        
+        # Track what we actually write
+        sections_written = 0
+        total_words = 0
+        
+        # ==================== VALIDATE INPUT ====================
+        if not content_dict:
+            return "ERROR: No content provided. Essay generation failed."
+        
+        title = content_dict.get('title', topic)
+        introduction = content_dict.get('introduction', '')
+        body_paragraphs = content_dict.get('body', [])
+        conclusion = content_dict.get('conclusion', '')
+        
+        # Validate we have actual content
+        if not introduction or len(introduction) < 50:
+            print("   ❌ ERROR: Introduction is missing or too short")
+            return "ERROR: Failed to generate introduction content."
+        
+        if not body_paragraphs or len(body_paragraphs) == 0:
+            print("   ❌ ERROR: Body paragraphs are missing")
+            return "ERROR: Failed to generate body content."
+        
+        if not conclusion or len(conclusion) < 30:
+            print("   ❌ ERROR: Conclusion is missing or too short")
+            return "ERROR: Failed to generate conclusion content."
         
         # ==================== TITLE ====================
-        print(f"   -> Writing title: {topic.upper()}")
-        
-        # Type the title
-        self._type_with_clipboard(topic.upper())
+        print(f"   -> Writing title: {title}")
+        self._type_with_clipboard(title)
         self.wait(0.3)
         
-        # Select all text on this line
+        # Select title and format
         self.press('home')
         self.wait(0.1)
         pyautogui.hotkey('shift', 'end')
         self.wait(0.2)
         
-        # Format: Bold + Center
+        # Format: Bold + Center + Larger font
         self.press('ctrl', 'b')  # Bold
         self.wait(0.1)
         self.press('ctrl', 'e')  # Center
         self.wait(0.1)
         
-        # Move to end and add blank lines
+        # Move to end and add spacing
         self.press('end')
         self.wait(0.1)
         self.press('enter')
         self.press('enter')
         self.wait(0.2)
         
-        # Reset formatting for body: Left align, Bold off
-        self.press('ctrl', 'l')  # Left align
+        # Reset formatting: Left align, Bold off
+        self.press('ctrl', 'l')
         self.wait(0.1)
         self.press('ctrl', 'b')  # Bold off
         self.wait(0.2)
         
-        # ==================== BODY SECTIONS ====================
-        # ENFORCE CORRECT ORDER: Introduction -> Core Analysis -> Conclusion
-        section_order = ["INTRODUCTION", "CORE ANALYSIS", "CONCLUSION"]
+        total_words += len(title.split())
         
-        section_num = 1
-        for section_name in section_order:
-            # Skip if section doesn't exist in content
-            if section_name not in content_dict:
-                print(f"   -> Skipping missing section: {section_name}")
+        # ==================== INTRODUCTION ====================
+        print(f"   -> Writing INTRODUCTION ({len(introduction.split())} words)")
+        
+        # Write heading
+        self._type_with_clipboard("INTRODUCTION")
+        self.wait(0.2)
+        
+        # Format heading: Bold
+        self.press('home')
+        self.wait(0.1)
+        pyautogui.hotkey('shift', 'end')
+        self.wait(0.1)
+        self.press('ctrl', 'b')
+        self.wait(0.1)
+        
+        # New line, bold off
+        self.press('end')
+        self.wait(0.1)
+        self.press('enter')
+        self.wait(0.1)
+        self.press('ctrl', 'b')  # Bold off
+        self.wait(0.1)
+        
+        # Write introduction content
+        self._type_with_clipboard(introduction)
+        self.wait(0.3)
+        
+        # Add spacing
+        self.press('enter')
+        self.press('enter')
+        self.wait(0.2)
+        
+        total_words += len(introduction.split())
+        sections_written += 1
+        
+        # ==================== BODY PARAGRAPHS ====================
+        for i, paragraph in enumerate(body_paragraphs, 1):
+            if not paragraph or len(paragraph) < 20:
+                print(f"   -> Skipping empty body paragraph {i}")
                 continue
             
-            paragraph = content_dict[section_name]
-            print(f"   -> Writing section {section_num}: {section_name}")
+            print(f"   -> Writing BODY PARAGRAPH {i} ({len(paragraph.split())} words)")
             
-            # --- HEADING (e.g., "1. INTRODUCTION") ---
-            # Use format without period to avoid Word auto-numbering: "SECTION 1: INTRODUCTION"
-            heading = f"SECTION {section_num}: {section_name.upper()}"
-            self._type_with_clipboard(heading)
+            # Write sub-heading
+            self._type_with_clipboard(f"Section {i}")
             self.wait(0.2)
             
-            # Select and bold the heading
+            # Format: Bold
             self.press('home')
             self.wait(0.1)
             pyautogui.hotkey('shift', 'end')
             self.wait(0.1)
-            self.press('ctrl', 'b')  # Bold ON
+            self.press('ctrl', 'b')
             self.wait(0.1)
             
-            # Move to end, new line
+            # New line, bold off
             self.press('end')
             self.wait(0.1)
             self.press('enter')
-            self.wait(0.2)
-            
-            # Turn off bold for paragraph text
-            self.press('ctrl', 'b')  # Bold OFF
+            self.wait(0.1)
+            self.press('ctrl', 'b')
             self.wait(0.1)
             
-            # --- PARAGRAPH (plain text, no numbering) ---
-            # The paragraph is just plain text, typed all at once
+            # Write paragraph content
             self._type_with_clipboard(paragraph)
             self.wait(0.3)
             
-            # Add spacing after paragraph (2 blank lines)
+            # Add spacing
             self.press('enter')
-            self.wait(0.1)
             self.press('enter')
             self.wait(0.2)
             
-            section_num += 1
+            total_words += len(paragraph.split())
+            sections_written += 1
         
-        print(f"   ✅ Document complete!")
-        return f"Document '{topic}' written with {len(content_dict)} sections."
+        # ==================== CONCLUSION ====================
+        print(f"   -> Writing CONCLUSION ({len(conclusion.split())} words)")
+        
+        # Write heading
+        self._type_with_clipboard("CONCLUSION")
+        self.wait(0.2)
+        
+        # Format heading: Bold
+        self.press('home')
+        self.wait(0.1)
+        pyautogui.hotkey('shift', 'end')
+        self.wait(0.1)
+        self.press('ctrl', 'b')
+        self.wait(0.1)
+        
+        # New line, bold off
+        self.press('end')
+        self.wait(0.1)
+        self.press('enter')
+        self.wait(0.1)
+        self.press('ctrl', 'b')
+        self.wait(0.1)
+        
+        # Write conclusion content
+        self._type_with_clipboard(conclusion)
+        self.wait(0.3)
+        
+        total_words += len(conclusion.split())
+        sections_written += 1
+        
+        # ==================== VERIFICATION ====================
+        # Only report success if we actually wrote content
+        if sections_written < 3:
+            print(f"   ❌ VERIFICATION FAILED: Only {sections_written} sections written")
+            return f"ERROR: Essay incomplete. Only {sections_written} sections written."
+        
+        if total_words < 200:
+            print(f"   ❌ VERIFICATION FAILED: Only {total_words} words written")
+            return f"ERROR: Essay too short. Only {total_words} words written."
+        
+        # ==================== SUCCESS ====================
+        print(f"   ✅ Essay complete! {sections_written} sections, {total_words} words")
+        return f"Essay written successfully: {sections_written} sections, {total_words} words. Title: {title}"
 
     # Aliases for backward compatibility
     def launch_word(self):
