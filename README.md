@@ -5,7 +5,7 @@
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License"/>
 </p>
 
-<h1 align="center">🤖 Auto-BOT</h1>
+<h1 align="center">SENTINEL-X</h1>
 <h3 align="center">Voice-Controlled Desktop Automation with AI</h3>
 
 <p align="center">
@@ -14,29 +14,29 @@
 
 ---
 
-## 🎯 Overview
+## Overview
 
-**Auto-BOT** is a sophisticated voice-controlled desktop automation system that leverages Large Language Models (LLMs) to understand natural language commands and translate them into precise desktop actions. Built with a modular OOP architecture, it combines speech recognition, AI-powered intent parsing, and OS-level automation.
+**SENTINEL-X** is a sophisticated voice-controlled desktop automation system that leverages Large Language Models (LLMs) to understand natural language commands and translate them into precise desktop actions. Built with a modular OOP architecture, it combines speech recognition, AI-powered intent parsing, and OS-level automation.
 
-### ✨ Key Features
+### Key Features
 
 | Feature | Description |
 |---------|-------------|
-| 🎤 **Natural Language Processing** | Speak naturally - the AI understands context and intent |
-| 🧠 **LLM-Powered Brain** | Uses Groq's Llama 3.1 for intelligent command parsing |
-| 🖥️ **Full Desktop Control** | Launch apps, manage files, control browser, and more |
-| 🎵 **Music Integration** | Play any song via voice command |
-| 📸 **Screenshot Capture** | Hands-free screen capture |
-| 📊 **System Monitoring** | Real-time CPU, memory, and battery reports |
-| 🎨 **Sci-Fi HUD Interface** | Immersive tactical-style GUI |
+| **Natural Language Processing** | Speak naturally - the AI understands context and intent |
+| **LLM-Powered Brain** | Uses Groq's Llama 3.1 for intelligent command parsing |
+| **Full Desktop Control** | Launch apps, manage files, control browser, and more |
+| **Music Integration** | Play any song via voice command |
+| **Screenshot Capture** | Hands-free screen capture |
+| **System Monitoring** | Real-time CPU, memory, and battery reports |
+| **Sci-Fi HUD Interface** | Immersive tactical-style GUI |
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         AUTO-BOT SYSTEM                          │
+│                       SENTINEL-X SYSTEM                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐       │
@@ -65,7 +65,7 @@
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -106,7 +106,7 @@ python -m app.main
 
 ---
 
-## 🎮 Usage Examples
+## Usage Examples
 
 ### Voice Commands
 
@@ -136,7 +136,7 @@ AI Plan:
 
 ---
 
-## 🛠️ Technical Highlights
+## Technical Highlights
 
 ### AI Integration
 - **Model**: Llama 3.1 8B Instant via Groq
@@ -161,10 +161,10 @@ AI Plan:
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
-Auto-BOT/
+SENTINEL-X/
 ├── app/                      # Main application package
 │   ├── __init__.py          # Package initialization
 │   ├── gui.py               # Sci-Fi HUD interface (1100 lines)
@@ -186,7 +186,7 @@ Auto-BOT/
 
 ---
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -214,7 +214,7 @@ def protocol_custom(self):
 
 ---
 
-## 🏭 Building Executable
+## Building Executable
 
 ```bash
 # Install PyInstaller
@@ -223,28 +223,28 @@ pip install pyinstaller
 # Build standalone EXE
 python build_exe.py
 
-# Output: dist/Auto-BOT.exe
+# Output: dist/SENTINEL-X.exe
 ```
 
 ---
 
-## 📊 Dependencies
+## Dependencies
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| `pyautogui` | ≥0.9.54 | GUI automation |
-| `pygetwindow` | ≥0.0.9 | Window management |
-| `psutil` | ≥5.9.0 | System monitoring |
-| `pygame` | ≥2.5.0 | Audio playback |
-| `SpeechRecognition` | ≥3.10.0 | Voice recognition |
-| `edge-tts` | ≥6.1.0 | Text-to-speech |
-| `groq` | ≥0.4.0 | LLM API client |
-| `customtkinter` | ≥5.2.0 | Modern UI widgets |
-| `pywin32` | ≥306 | Windows COM automation |
+| `pyautogui` | >=0.9.54 | GUI automation |
+| `pygetwindow` | >=0.0.9 | Window management |
+| `psutil` | >=5.9.0 | System monitoring |
+| `pygame` | >=2.5.0 | Audio playback |
+| `SpeechRecognition` | >=3.10.0 | Voice recognition |
+| `edge-tts` | >=6.1.0 | Text-to-speech |
+| `groq` | >=0.4.0 | LLM API client |
+| `customtkinter` | >=5.2.0 | Modern UI widgets |
+| `pywin32` | >=306 | Windows COM automation |
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -256,13 +256,13 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Google Speech Recognition** - Voice input processing
 - **Microsoft Edge TTS** - Natural text-to-speech
@@ -272,7 +272,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 <p align="center">
-  <strong>Built with ❤️ for automation enthusiasts</strong>
+  <strong>Built for automation enthusiasts</strong>
 </p>
 
 <p align="center">
