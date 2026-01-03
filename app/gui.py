@@ -6,15 +6,9 @@
 ██║     ╚██████╔╝██╔╝ ██╗      ██████╔╝
 ╚═╝      ╚═════╝ ╚═╝  ╚═╝      ╚═════╝ 
 
-FOX-3 COMBAT SYSTEMS INTERFACE
-High-Fidelity Sci-Fi Tactical HUD
-Pure Canvas Graphics - No External Images
-
-LAYOUT: 1366x768 fixed window
-- Left Panel:   280px
-- Center Panel: 746px (flexible)
-- Right Panel:  280px
-- Margins:      20px total (10px each side)
+FOX-3 TACTICAL COMBAT INTERFACE
+Advanced Holographic HUD System
+Featuring: Rotating F-16 Wireframe Model
 """
 
 import tkinter as tk
@@ -29,494 +23,495 @@ from app.main import NovaBotEngine
 
 # ==================== COLOR PALETTE ====================
 class Colors:
-    """Sci-Fi Combat Color Scheme"""
-    BG_DEEP = "#020A18"           # Deep midnight blue
-    BG_PANEL = "#051528"          # Panel background
-    BG_CIRCUIT = "#071E35"        # Circuit pattern color
-    CYAN_GLOW = "#00F0FF"         # Primary neon cyan
-    CYAN_DIM = "#006080"          # Dimmed cyan
-    BLUE_ELECTRIC = "#007BFF"     # Electric blue accent
-    BLUE_DIM = "#003366"          # Dimmed blue
-    ORANGE_GLOW = "#FF9900"       # Alert/active orange
-    ORANGE_DIM = "#804D00"        # Dimmed orange
-    RED_ALERT = "#FF3333"         # Critical alert
+    """Tactical HUD Color Scheme"""
+    BG_DEEP = "#000000"           # Pure black background
+    BG_PANEL = "#0a0a0a"          # Slightly lighter panel
+    CYAN_GLOW = "#00E5FF"         # Primary neon cyan
+    CYAN_BRIGHT = "#00FFFF"       # Bright cyan
+    CYAN_DIM = "#004455"          # Dimmed cyan
+    CYAN_DARK = "#002233"         # Very dim cyan
+    BLUE_ELECTRIC = "#0066FF"     # Electric blue
+    ORANGE_GLOW = "#FF6600"       # Alert orange
+    RED_ALERT = "#FF0033"         # Critical red
     GREEN_OK = "#00FF66"          # Success green
-    TEXT_BRIGHT = "#FFFFFF"       # Bright text
-    TEXT_DIM = "#4A6A8A"          # Dimmed text
-    GRID_LINE = "#0A2540"         # Grid lines
-    SCROLLBAR_BG = "#0A1A2E"      # Scrollbar background (dark)
-    SCROLLBAR_FG = "#1A3A5E"      # Scrollbar thumb (slightly lighter)
+    WHITE = "#FFFFFF"             # Pure white
+    TEXT_DIM = "#336677"          # Dimmed text
+    GRID_LINE = "#0a2530"         # Grid lines
 
 
-# ==================== CIRCUIT BACKGROUND CANVAS ====================
-class CircuitBackground(tk.Canvas):
-    """Animated circuit board pattern background."""
+# ==================== F-16 WIREFRAME MODEL ====================
+class F16Model:
+    """3D wireframe data for F-16 Fighting Falcon"""
     
-    def __init__(self, parent, **kwargs):
-        super().__init__(parent, bg=Colors.BG_DEEP, highlightthickness=0, **kwargs)
-        self.bind("<Configure>", self._on_resize)
-        self.data_flows = []
-        self._animating = True
-        self._draw_patterns()
+    # Simplified F-16 vertices (x, y, z) - scaled model
+    VERTICES = [
+        # Nose cone
+        (0, 0, 50),           # 0 - nose tip
+        (-5, -3, 35),         # 1 - nose left top
+        (5, -3, 35),          # 2 - nose right top
+        (-5, 3, 35),          # 3 - nose left bottom
+        (5, 3, 35),           # 4 - nose right bottom
+        
+        # Cockpit
+        (-6, -8, 25),         # 5 - cockpit left top
+        (6, -8, 25),          # 6 - cockpit right top
+        (-6, 2, 25),          # 7 - cockpit left bottom
+        (6, 2, 25),           # 8 - cockpit right bottom
+        
+        # Fuselage front
+        (-8, -5, 10),         # 9 - fuse front left top
+        (8, -5, 10),          # 10 - fuse front right top
+        (-8, 5, 10),          # 11 - fuse front left bottom
+        (8, 5, 10),           # 12 - fuse front right bottom
+        
+        # Fuselage mid
+        (-10, -6, -15),       # 13 - fuse mid left top
+        (10, -6, -15),        # 14 - fuse mid right top
+        (-10, 6, -15),        # 15 - fuse mid left bottom
+        (10, 6, -15),         # 16 - fuse mid right bottom
+        
+        # Fuselage rear
+        (-8, -5, -40),        # 17 - fuse rear left top
+        (8, -5, -40),         # 18 - fuse rear right top
+        (-8, 5, -40),         # 19 - fuse rear left bottom
+        (8, 5, -40),          # 20 - fuse rear right bottom
+        
+        # Engine nozzle
+        (-6, 0, -50),         # 21 - nozzle left
+        (6, 0, -50),          # 22 - nozzle right
+        (0, -5, -50),         # 23 - nozzle top
+        (0, 5, -50),          # 24 - nozzle bottom
+        
+        # Wings
+        (-45, 0, -10),        # 25 - left wing tip
+        (45, 0, -10),         # 26 - right wing tip
+        (-35, 0, -25),        # 27 - left wing rear
+        (35, 0, -25),         # 28 - right wing rear
+        
+        # Horizontal stabilizers
+        (-20, 0, -45),        # 29 - left stab tip
+        (20, 0, -45),         # 30 - right stab tip
+        (-15, 0, -38),        # 31 - left stab front
+        (15, 0, -38),         # 32 - right stab front
+        
+        # Vertical tail
+        (0, -25, -35),        # 33 - tail top
+        (0, -20, -25),        # 34 - tail front
+        (0, -8, -45),         # 35 - tail rear
+        
+        # Air intake (bottom)
+        (-7, 8, 15),          # 36 - intake left
+        (7, 8, 15),           # 37 - intake right
+        (-5, 12, -5),         # 38 - intake rear left
+        (5, 12, -5),          # 39 - intake rear right
+    ]
     
-    def _on_resize(self, event):
-        self._draw_patterns()
-    
-    def _draw_patterns(self):
-        """Draw circuit board patterns."""
-        self.delete("circuit")
-        w = self.winfo_width() or 1366
-        h = self.winfo_height() or 768
+    # Edges connecting vertices
+    EDGES = [
+        # Nose
+        (0, 1), (0, 2), (0, 3), (0, 4),
+        (1, 2), (3, 4), (1, 3), (2, 4),
         
-        # Hex grid pattern
-        hex_size = 40
-        for row in range(0, h + hex_size, hex_size):
-            offset = (row // hex_size % 2) * (hex_size // 2)
-            for col in range(-hex_size, w + hex_size, hex_size):
-                x = col + offset
-                y = row
-                self._draw_hex(x, y, hex_size // 2 - 2, Colors.BG_CIRCUIT)
+        # Nose to cockpit
+        (1, 5), (2, 6), (3, 7), (4, 8),
+        (5, 6), (7, 8), (5, 7), (6, 8),
         
-        # Circuit traces
-        for _ in range(15):
-            self._draw_circuit_trace(w, h)
+        # Cockpit to fuselage front
+        (5, 9), (6, 10), (7, 11), (8, 12),
+        (9, 10), (11, 12), (9, 11), (10, 12),
         
-        # Corner brackets
-        self._draw_corner_brackets(w, h)
-    
-    def _draw_hex(self, cx, cy, size, color):
-        """Draw a hexagon."""
-        points = []
-        for i in range(6):
-            angle = math.pi / 6 + i * math.pi / 3
-            x = cx + size * math.cos(angle)
-            y = cy + size * math.sin(angle)
-            points.extend([x, y])
-        self.create_polygon(points, outline=color, fill="", width=1, tags="circuit")
-    
-    def _draw_circuit_trace(self, w, h):
-        """Draw a circuit trace line."""
-        side = random.choice(['top', 'left', 'right', 'bottom'])
-        if side == 'top':
-            x, y = random.randint(0, w), 0
-        elif side == 'bottom':
-            x, y = random.randint(0, w), h
-        elif side == 'left':
-            x, y = 0, random.randint(0, h)
-        else:
-            x, y = w, random.randint(0, h)
+        # Fuselage front to mid
+        (9, 13), (10, 14), (11, 15), (12, 16),
+        (13, 14), (15, 16), (13, 15), (14, 16),
         
-        points = [(x, y)]
-        for _ in range(random.randint(3, 8)):
-            direction = random.choice(['h', 'v'])
-            if direction == 'h':
-                x = x + random.randint(-200, 200)
-            else:
-                y = y + random.randint(-150, 150)
-            x = max(0, min(w, x))
-            y = max(0, min(h, y))
-            points.append((x, y))
+        # Fuselage mid to rear
+        (13, 17), (14, 18), (15, 19), (16, 20),
+        (17, 18), (19, 20), (17, 19), (18, 20),
         
-        if len(points) > 1:
-            flat_points = [coord for point in points for coord in point]
-            self.create_line(flat_points, fill=Colors.BG_CIRCUIT, width=1, tags="circuit")
-            
-            for px, py in points[1:-1]:
-                self.create_oval(px-2, py-2, px+2, py+2, fill=Colors.CYAN_DIM, outline="", tags="circuit")
-    
-    def _draw_corner_brackets(self, w, h):
-        """Draw glowing corner brackets."""
-        size = 30
-        thickness = 3
-        color = Colors.CYAN_DIM
+        # Rear to nozzle
+        (17, 21), (18, 22), (17, 23), (18, 23),
+        (19, 21), (20, 22), (19, 24), (20, 24),
+        (21, 23), (22, 23), (21, 24), (22, 24),
         
-        corners = [
-            (0, 0, 1, 1),
-            (w, 0, -1, 1),
-            (0, h, 1, -1),
-            (w, h, -1, -1),
-        ]
+        # Wings
+        (11, 25), (12, 26),   # Wing root front
+        (15, 27), (16, 28),   # Wing root rear
+        (25, 27), (26, 28),   # Wing trailing edge
+        (11, 27), (12, 28),   # Wing leading edge inner
         
-        for x, y, dx, dy in corners:
-            self.create_line(x, y, x + dx * size, y, fill=color, width=thickness, tags="circuit")
-            self.create_line(x, y, x, y + dy * size, fill=color, width=thickness, tags="circuit")
+        # Horizontal stabilizers
+        (19, 29), (20, 30),   # Stab root
+        (31, 29), (32, 30),   # Stab leading
+        (29, 35), (30, 35),   # Stab trailing
+        (17, 31), (18, 32),
+        
+        # Vertical tail
+        (17, 34), (18, 34),
+        (34, 33), (33, 35),
+        (17, 35), (18, 35),
+        
+        # Air intake
+        (36, 37), (36, 38), (37, 39),
+        (38, 39), (11, 36), (12, 37),
+        (15, 38), (16, 39),
+    ]
 
 
-# ==================== ADVANCED RADAR ====================
-class AdvancedRadar(tk.Canvas):
-    """High-fidelity tactical radar with terrain grid."""
+class RotatingF16(tk.Canvas):
+    """Rotating wireframe F-16 hologram display"""
     
-    def __init__(self, parent, size=240, **kwargs):
-        super().__init__(parent, width=size, height=size, bg=Colors.BG_DEEP, 
-                        highlightthickness=2, highlightbackground=Colors.CYAN_DIM, **kwargs)
+    def __init__(self, parent, size=280, **kwargs):
+        super().__init__(parent, width=size, height=size+60, 
+                        bg=Colors.BG_DEEP, highlightthickness=0, **kwargs)
         self.size = size
-        self.center = size // 2
-        self.sweep_angle = 0
-        self.blips = []
-        self.targets = []
+        self.center_x = size // 2
+        self.center_y = size // 2 + 20
+        self.scale = 2.2
+        
+        # Rotation angles
+        self.angle_x = 0.3  # Slight pitch
+        self.angle_y = 0
+        self.angle_z = 0.1  # Slight roll
+        
         self.state = "offline"
         self._animating = True
-        
-        self._draw_static()
         self._animate()
-    
-    def _draw_static(self):
-        """Draw static radar elements."""
-        grid_color = Colors.GRID_LINE
-        for i in range(1, 6):
-            r = (self.center - 20) * i / 5
-            self.create_oval(
-                self.center - r, self.center - r,
-                self.center + r, self.center + r,
-                outline=Colors.CYAN_DIM if i % 2 == 0 else grid_color, width=1
-            )
-        
-        for i in range(8):
-            angle = i * math.pi / 4
-            x = self.center + (self.center - 15) * math.cos(angle)
-            y = self.center - (self.center - 15) * math.sin(angle)
-            self.create_line(self.center, self.center, x, y, fill=grid_color, width=1)
-        
-        self._draw_reticle()
-        self.create_oval(8, 8, self.size-8, self.size-8, outline=Colors.CYAN_GLOW, width=2)
-        
-        for i in range(36):
-            angle = i * math.pi / 18
-            inner_r = self.center - 18
-            outer_r = self.center - 10 if i % 3 == 0 else self.center - 14
-            x1 = self.center + inner_r * math.cos(angle)
-            y1 = self.center - inner_r * math.sin(angle)
-            x2 = self.center + outer_r * math.cos(angle)
-            y2 = self.center - outer_r * math.sin(angle)
-            self.create_line(x1, y1, x2, y2, fill=Colors.CYAN_DIM, width=1)
-    
-    def _draw_reticle(self):
-        """Draw center targeting reticle."""
-        c = self.center
-        s = 15
-        color = Colors.CYAN_GLOW
-        
-        self.create_line(c - s, c, c - 5, c, fill=color, width=2)
-        self.create_line(c + 5, c, c + s, c, fill=color, width=2)
-        self.create_line(c, c - s, c, c - 5, fill=color, width=2)
-        self.create_line(c, c + 5, c, c + s, fill=color, width=2)
-        self.create_oval(c - 3, c - 3, c + 3, c + 3, fill=color, outline="")
     
     def set_state(self, state):
         self.state = state
     
-    def _get_color(self):
-        """Get color based on state."""
-        return {
-            "offline": Colors.CYAN_DIM,
-            "online": Colors.CYAN_GLOW,
-            "listening": Colors.CYAN_GLOW,
-            "processing": Colors.ORANGE_GLOW,
-            "executing": Colors.RED_ALERT,
-        }.get(self.state, Colors.CYAN_GLOW)
+    def _rotate_point(self, x, y, z):
+        """Apply 3D rotation to a point"""
+        # Rotate around Y axis (main rotation)
+        cos_y, sin_y = math.cos(self.angle_y), math.sin(self.angle_y)
+        x, z = x * cos_y - z * sin_y, x * sin_y + z * cos_y
+        
+        # Rotate around X axis (pitch)
+        cos_x, sin_x = math.cos(self.angle_x), math.sin(self.angle_x)
+        y, z = y * cos_x - z * sin_x, y * sin_x + z * cos_x
+        
+        # Rotate around Z axis (roll)
+        cos_z, sin_z = math.cos(self.angle_z), math.sin(self.angle_z)
+        x, y = x * cos_z - y * sin_z, x * sin_z + y * cos_z
+        
+        return x, y, z
+    
+    def _project(self, x, y, z):
+        """Project 3D point to 2D with perspective"""
+        # Simple perspective projection
+        fov = 200
+        z_offset = 100
+        
+        scale = fov / (z + z_offset) if (z + z_offset) > 0 else fov / 0.1
+        screen_x = self.center_x + x * scale * self.scale
+        screen_y = self.center_y - y * scale * self.scale  # Invert Y
+        
+        return screen_x, screen_y, z
+    
+    def _draw_scan_lines(self):
+        """Draw horizontal scan lines effect"""
+        for i in range(0, self.size + 60, 4):
+            alpha = 0.03 + 0.02 * math.sin(i * 0.1 + self.angle_y * 2)
+            if random.random() < 0.3:
+                self.create_line(0, i, self.size, i, 
+                               fill=Colors.CYAN_DARK, width=1, tags="scanline")
+    
+    def _draw_hologram_base(self):
+        """Draw holographic projection base"""
+        base_y = self.size + 30
+        
+        # Base glow ellipse
+        for i in range(5, 0, -1):
+            glow_color = Colors.CYAN_DARK if i > 2 else Colors.CYAN_DIM
+            self.create_oval(
+                30 - i*3, base_y - 15 - i*2,
+                self.size - 30 + i*3, base_y + 15 + i*2,
+                outline=glow_color, width=1, tags="base"
+            )
+        
+        # Base platform
+        self.create_oval(40, base_y - 10, self.size - 40, base_y + 10,
+                        outline=Colors.CYAN_GLOW, width=2, tags="base")
     
     def _animate(self):
-        """Animate radar sweep."""
         if not self._animating:
             return
         
-        self.delete("dynamic")
+        self.delete("all")
         
-        if self.state != "offline":
-            color = self._get_color()
-            sweep_len = self.center - 20
-            
-            end_x = self.center + sweep_len * math.cos(self.sweep_angle)
-            end_y = self.center - sweep_len * math.sin(self.sweep_angle)
-            
-            for i in range(30):
-                trail_angle = self.sweep_angle - i * 0.03
-                trail_len = sweep_len * (1 - i * 0.01)
-                tx = self.center + trail_len * math.cos(trail_angle)
-                ty = self.center - trail_len * math.sin(trail_angle)
-                trail_color = Colors.CYAN_DIM if i > 10 else color
-                self.create_line(self.center, self.center, tx, ty, 
-                               fill=trail_color, width=max(1, 3 - i//10), tags="dynamic")
-            
-            self.create_line(self.center, self.center, end_x, end_y,
-                           fill=color, width=3, tags="dynamic")
-            
-            if random.random() < 0.03:
-                self._spawn_target()
-            
-            self._draw_targets()
-            
-            self.sweep_angle += 0.08
-            if self.sweep_angle >= 2 * math.pi:
-                self.sweep_angle = 0
+        # Draw scan lines
+        self._draw_scan_lines()
         
-        self.after(25, self._animate)
-    
-    def _spawn_target(self):
-        """Spawn a new target."""
-        if len(self.targets) < 6:
-            dist = random.randint(40, self.center - 30)
-            angle = random.uniform(0, 2 * math.pi)
-            target_type = random.choice(['hostile', 'friendly', 'unknown'])
-            self.targets.append({
-                'dist': dist, 'angle': angle, 'type': target_type,
-                'life': 100, 'trail': []
-            })
-    
-    def _draw_targets(self):
-        """Draw all targets with trails."""
-        to_remove = []
+        # Draw hologram base
+        self._draw_hologram_base()
         
-        for target in self.targets:
-            x = self.center + target['dist'] * math.cos(target['angle'])
-            y = self.center - target['dist'] * math.sin(target['angle'])
-            
-            color = {
-                'hostile': Colors.RED_ALERT,
-                'friendly': Colors.GREEN_OK,
-                'unknown': Colors.ORANGE_GLOW
-            }[target['type']]
-            
-            target['trail'].append((x, y))
-            if len(target['trail']) > 10:
-                target['trail'].pop(0)
-            
-            for i, (tx, ty) in enumerate(target['trail']):
-                size = 2 + i * 0.3
-                self.create_oval(tx - size/2, ty - size/2, tx + size/2, ty + size/2,
-                               fill=color, outline="", tags="dynamic")
-            
-            self._draw_target_marker(x, y, color, target['type'])
-            
-            target['life'] -= 1
-            if target['life'] <= 0:
-                to_remove.append(target)
+        # Calculate and store projected vertices with depth
+        projected = []
+        for vx, vy, vz in F16Model.VERTICES:
+            rx, ry, rz = self._rotate_point(vx, vy, vz)
+            px, py, pz = self._project(rx, ry, rz)
+            projected.append((px, py, pz))
         
-        for t in to_remove:
-            self.targets.remove(t)
-    
-    def _draw_target_marker(self, x, y, color, target_type):
-        """Draw a target marker."""
-        size = 8
-        if target_type == 'hostile':
-            self.create_polygon(x, y - size, x + size, y, x, y + size, x - size, y,
-                              outline=color, fill="", width=2, tags="dynamic")
-        elif target_type == 'friendly':
-            self.create_oval(x - size, y - size, x + size, y + size,
-                           outline=color, fill="", width=2, tags="dynamic")
+        # Choose color based on state
+        if self.state == "offline":
+            edge_color = Colors.CYAN_DIM
+            glow_color = Colors.CYAN_DARK
+        elif self.state == "listening":
+            edge_color = Colors.CYAN_BRIGHT
+            glow_color = Colors.CYAN_GLOW
+        elif self.state == "processing":
+            edge_color = Colors.ORANGE_GLOW
+            glow_color = "#FF9933"
+        elif self.state == "executing":
+            edge_color = Colors.RED_ALERT
+            glow_color = "#FF6666"
         else:
-            self.create_polygon(x, y - size, x + size, y + size, x - size, y + size,
-                              outline=color, fill="", width=2, tags="dynamic")
+            edge_color = Colors.CYAN_GLOW
+            glow_color = Colors.CYAN_DIM
+        
+        # Sort edges by average depth for painter's algorithm
+        edge_depths = []
+        for v1, v2 in F16Model.EDGES:
+            avg_z = (projected[v1][2] + projected[v2][2]) / 2
+            edge_depths.append((avg_z, v1, v2))
+        edge_depths.sort(reverse=True)  # Draw far edges first
+        
+        # Draw edges with glow effect
+        for depth, v1, v2 in edge_depths:
+            x1, y1, _ = projected[v1]
+            x2, y2, _ = projected[v2]
+            
+            # Depth-based alpha (farther = dimmer)
+            brightness = max(0.3, min(1.0, (depth + 50) / 100))
+            
+            # Glow layer
+            self.create_line(x1, y1, x2, y2, fill=glow_color, width=3, tags="glow")
+            # Main line
+            self.create_line(x1, y1, x2, y2, fill=edge_color, width=1, tags="edge")
+        
+        # Draw vertices as glowing points
+        for px, py, pz in projected:
+            brightness = max(0.5, min(1.0, (pz + 50) / 100))
+            size = 2 + brightness
+            self.create_oval(px - size, py - size, px + size, py + size,
+                           fill=edge_color, outline="", tags="vertex")
+        
+        # Draw label
+        self.create_text(self.size // 2, 15, text="F-16 FIGHTING FALCON",
+                        font=("Consolas", 9, "bold"), fill=Colors.CYAN_GLOW, tags="label")
+        
+        # Status text
+        status_text = self.state.upper() if self.state != "offline" else "STANDBY"
+        self.create_text(self.size // 2, self.size + 50, text=status_text,
+                        font=("Consolas", 8), fill=edge_color, tags="status")
+        
+        # Rotate for next frame
+        self.angle_y += 0.02  # Continuous Y rotation
+        
+        self.after(33, self._animate)  # ~30 FPS
     
     def stop(self):
         self._animating = False
 
 
-# ==================== GLOWING ENGAGE BUTTON ====================
-class EngageButton(tk.Canvas):
-    """Large, glowing Start/Stop button with pulse animation."""
+# ==================== CENTRAL RUN BUTTON ====================
+class CentralRunButton(tk.Canvas):
+    """Central circular Run/Stop button with rotating rings"""
     
-    def __init__(self, parent, command=None, width=240, height=60, **kwargs):
-        super().__init__(parent, width=width, height=height, bg=Colors.BG_PANEL, 
-                        highlightthickness=0, **kwargs)
-        self.btn_width = width
-        self.btn_height = height
+    def __init__(self, parent, command=None, size=220, **kwargs):
+        super().__init__(parent, width=size, height=size, 
+                        bg=Colors.BG_DEEP, highlightthickness=0, **kwargs)
+        self.size = size
+        self.center = size // 2
         self.command = command
         self.engaged = False
-        self.pulse_phase = 0
         self.hover = False
+        self.ring_angle = 0
+        self.pulse = 0
         self._animating = True
         
-        self.bind("<Enter>", self._on_enter)
-        self.bind("<Leave>", self._on_leave)
+        self.bind("<Enter>", lambda e: self._set_hover(True))
+        self.bind("<Leave>", lambda e: self._set_hover(False))
         self.bind("<Button-1>", self._on_click)
         
         self._animate()
     
-    def _on_enter(self, event):
-        self.hover = True
-    
-    def _on_leave(self, event):
-        self.hover = False
+    def _set_hover(self, hover):
+        self.hover = hover
     
     def _on_click(self, event):
-        if self.command:
-            self.command()
+        # Check if click is within center button area
+        dx = event.x - self.center
+        dy = event.y - self.center
+        if dx*dx + dy*dy < 35*35:  # Within inner button
+            if self.command:
+                self.command()
     
     def set_engaged(self, engaged):
         self.engaged = engaged
     
+    def _draw_ring(self, radius, segments, gap, width, color, rotation=0):
+        """Draw a segmented ring"""
+        segment_angle = (2 * math.pi - gap * segments) / segments
+        
+        for i in range(segments):
+            start = rotation + i * (segment_angle + gap)
+            
+            # Calculate arc points
+            points = []
+            steps = 20
+            for j in range(steps + 1):
+                angle = start + (segment_angle * j / steps)
+                x = self.center + radius * math.cos(angle)
+                y = self.center + radius * math.sin(angle)
+                points.extend([x, y])
+            
+            if len(points) >= 4:
+                self.create_line(points, fill=color, width=width, 
+                               smooth=True, tags="ring")
+    
+    def _draw_tick_marks(self, radius, count, length, color):
+        """Draw tick marks around a circle"""
+        for i in range(count):
+            angle = 2 * math.pi * i / count
+            x1 = self.center + radius * math.cos(angle)
+            y1 = self.center + radius * math.sin(angle)
+            x2 = self.center + (radius + length) * math.cos(angle)
+            y2 = self.center + (radius + length) * math.sin(angle)
+            
+            # Every 5th tick is longer
+            if i % 5 == 0:
+                self.create_line(x1, y1, x2 + length*0.5*math.cos(angle), 
+                               y2 + length*0.5*math.sin(angle),
+                               fill=color, width=2, tags="tick")
+            else:
+                self.create_line(x1, y1, x2, y2, fill=color, width=1, tags="tick")
+    
     def _animate(self):
         if not self._animating:
             return
         
         self.delete("all")
+        c = self.center
         
-        w, h = self.btn_width, self.btn_height
-        cx, cy = w / 2, h / 2  # True center
+        self.pulse += 0.08
+        pulse_val = (math.sin(self.pulse) + 1) / 2
         
-        self.pulse_phase += 0.1
-        pulse = (math.sin(self.pulse_phase) + 1) / 2
-        
+        # Colors based on state
         if self.engaged:
             main_color = Colors.RED_ALERT
             glow_color = "#FF6666"
-            text = "■  DISENGAGE"
+            btn_text = "Stop"
         else:
-            main_color = Colors.ORANGE_GLOW
-            glow_color = "#FFCC66"
-            text = "▶  ENGAGE SYSTEMS"
+            main_color = Colors.CYAN_GLOW
+            glow_color = Colors.CYAN_DIM
+            btn_text = "Run"
         
-        # Outer glow (pulsing)
-        glow_size = 4 + pulse * 3
-        for i in range(int(glow_size), 0, -1):
-            self.create_rectangle(
-                5 - i, 5 - i, w - 5 + i, h - 5 + i,
-                outline=glow_color if i < 3 else main_color,
-                width=1
+        # Outer tick marks ring
+        self._draw_tick_marks(95, 60, 8, Colors.CYAN_DIM)
+        
+        # Outer rotating ring (segmented)
+        self._draw_ring(85, 8, 0.15, 2, Colors.CYAN_DIM, self.ring_angle)
+        
+        # Middle rotating ring (opposite direction)
+        self._draw_ring(72, 12, 0.1, 3, main_color, -self.ring_angle * 1.5)
+        
+        # Inner static ring with gradient effect
+        for i in range(3):
+            self.create_oval(
+                c - 58 + i, c - 58 + i, c + 58 - i, c + 58 - i,
+                outline=glow_color if i == 0 else main_color, 
+                width=2 - i*0.5, tags="inner_ring"
             )
         
-        # Main button body
-        if self.hover:
-            fill = main_color
-            text_color = Colors.BG_DEEP
-        else:
-            fill = Colors.BG_PANEL
-            text_color = main_color
+        # Decorative inner elements
+        self._draw_ring(50, 16, 0.08, 1, Colors.CYAN_DIM, self.ring_angle * 2)
         
-        # Button shape
-        self.create_rectangle(8, 8, w - 8, h - 8, fill=fill, outline=main_color, width=3)
+        # Center button glow
+        glow_radius = 38 + pulse_val * 3
+        for i in range(5, 0, -1):
+            self.create_oval(
+                c - glow_radius - i*2, c - glow_radius - i*2,
+                c + glow_radius + i*2, c + glow_radius + i*2,
+                outline=glow_color, width=1, tags="btn_glow"
+            )
         
-        # Corner accents
-        corner_size = 10
-        for x, y, dx, dy in [(8, 8, 1, 1), (w-8, 8, -1, 1), (8, h-8, 1, -1), (w-8, h-8, -1, -1)]:
-            self.create_line(x, y, x + dx * corner_size, y, fill=Colors.CYAN_GLOW, width=2)
-            self.create_line(x, y, x, y + dy * corner_size, fill=Colors.CYAN_GLOW, width=2)
+        # Center button
+        btn_fill = main_color if self.hover else Colors.BG_PANEL
+        btn_outline = main_color
+        self.create_oval(c - 35, c - 35, c + 35, c + 35,
+                        fill=btn_fill, outline=btn_outline, width=3, tags="btn")
         
-        # Text - perfectly centered (offset left to compensate for symbol width)
-        text_x = (w // 2) - 4
-        text_y = h // 2
-        self.create_text(text_x, text_y, text=text, fill=text_color,
-                        font=("Consolas", 11, "bold"), anchor="center", justify="center")
+        # Button text
+        text_color = Colors.BG_DEEP if self.hover else main_color
+        self.create_text(c, c, text=btn_text, font=("Consolas", 16, "bold"),
+                        fill=text_color, tags="btn_text")
         
-        # Scanning line effect when hovering
-        if self.hover:
-            scan_y = 10 + (self.pulse_phase * 20) % (h - 20)
-            self.create_line(12, scan_y, w - 12, scan_y, fill=glow_color, width=1)
+        # Rotating elements
+        self.ring_angle += 0.02
         
-        self.after(30, self._animate)
+        self.after(33, self._animate)
     
     def stop(self):
         self._animating = False
 
 
-# ==================== POWER BAR ====================
-class PowerBar(tk.Canvas):
-    """Vertical power level indicator."""
+# ==================== LOADING BAR ====================
+class LoadingBar(tk.Canvas):
+    """Animated loading/progress bar"""
     
-    def __init__(self, parent, **kwargs):
-        super().__init__(parent, width=50, height=180, bg=Colors.BG_DEEP,
-                        highlightthickness=1, highlightbackground=Colors.CYAN_DIM, **kwargs)
-        self.level = 0.75
+    def __init__(self, parent, width=250, height=25, **kwargs):
+        super().__init__(parent, width=width, height=height,
+                        bg=Colors.BG_DEEP, highlightthickness=0, **kwargs)
+        self.bar_width = width
+        self.bar_height = height
+        self.progress = 0
+        self.target_progress = 100
+        self.text = "INITIATING SYSTEM 1...."
+        self.scan_pos = 0
         self._animating = True
         self._animate()
     
-    def set_level(self, level):
-        self.level = max(0, min(1, level))
+    def set_progress(self, value, text=None):
+        self.target_progress = max(0, min(100, value))
+        if text:
+            self.text = text
     
     def _animate(self):
         if not self._animating:
             return
         
         self.delete("all")
-        w, h = 50, 180
+        w, h = self.bar_width, self.bar_height
         
-        self.create_text(w // 2, 12, text="POWER", fill=Colors.CYAN_GLOW,
-                        font=("Consolas", 7, "bold"))
+        # Animate progress
+        if self.progress < self.target_progress:
+            self.progress += 2
+        elif self.progress > self.target_progress:
+            self.progress -= 2
         
-        bar_x, bar_y = 12, 25
-        bar_w, bar_h = 26, 135
+        # Draw text
+        self.create_text(5, 3, text=self.text, anchor="nw",
+                        font=("Consolas", 9, "bold"), fill=Colors.CYAN_GLOW)
         
-        self.create_rectangle(bar_x, bar_y, bar_x + bar_w, bar_y + bar_h,
-                            outline=Colors.CYAN_DIM, fill=Colors.BG_PANEL, width=2)
+        # Bar background
+        bar_y = 18
+        bar_h = 6
+        self.create_rectangle(0, bar_y, w, bar_y + bar_h,
+                            outline=Colors.CYAN_DIM, fill=Colors.BG_PANEL, width=1)
         
-        fill_h = int(bar_h * self.level)
-        fill_y = bar_y + bar_h - fill_h
+        # Progress fill with segments
+        fill_width = (w - 4) * self.progress / 100
+        segment_width = 8
+        for x in range(2, int(fill_width), segment_width + 2):
+            seg_w = min(segment_width, fill_width - x + 2)
+            self.create_rectangle(x, bar_y + 1, x + seg_w, bar_y + bar_h - 1,
+                                fill=Colors.CYAN_GLOW, outline="")
         
-        segment_h = 10
-        for i in range(0, fill_h, segment_h):
-            seg_y = bar_y + bar_h - i - segment_h
-            if seg_y >= fill_y:
-                ratio = i / bar_h
-                if ratio > 0.7:
-                    color = Colors.GREEN_OK
-                elif ratio > 0.3:
-                    color = Colors.CYAN_GLOW
-                else:
-                    color = Colors.ORANGE_GLOW
-                
-                self.create_rectangle(
-                    bar_x + 3, seg_y + 2,
-                    bar_x + bar_w - 3, seg_y + segment_h - 2,
-                    fill=color, outline=""
-                )
-        
-        pct = int(self.level * 100)
-        self.create_text(w // 2, bar_y + bar_h + 10, text=f"{pct}%",
-                        fill=Colors.CYAN_GLOW, font=("Consolas", 9, "bold"))
-        
-        self.level = max(0.4, min(1.0, self.level + random.uniform(-0.02, 0.02)))
-        
-        self.after(100, self._animate)
-    
-    def stop(self):
-        self._animating = False
-
-
-# ==================== WAVEFORM VISUALIZER ====================
-class WaveformVisualizer(tk.Canvas):
-    """Audio waveform visualization."""
-    
-    def __init__(self, parent, **kwargs):
-        super().__init__(parent, height=50, bg=Colors.BG_DEEP,
-                        highlightthickness=1, highlightbackground=Colors.CYAN_DIM, **kwargs)
-        self.waveform = [0] * 50
-        self.active = False
-        self._animating = True
-        self._animate()
-    
-    def set_active(self, active):
-        self.active = active
-    
-    def _animate(self):
-        if not self._animating:
-            return
-        
-        self.delete("all")
-        w = self.winfo_width() or 400
-        h = 50
-        
-        if self.active:
-            self.waveform.pop(0)
-            self.waveform.append(random.uniform(0.2, 1.0))
-        else:
-            self.waveform.pop(0)
-            self.waveform.append(random.uniform(0, 0.1))
-        
-        self.create_line(0, h // 2, w, h // 2, fill=Colors.CYAN_DIM, width=1)
-        
-        bar_width = w / len(self.waveform)
-        for i, val in enumerate(self.waveform):
-            x = i * bar_width
-            bar_h = val * (h // 2 - 5)
-            
-            color = Colors.CYAN_GLOW if self.active else Colors.CYAN_DIM
-            
-            self.create_rectangle(
-                x + 1, h // 2 - bar_h,
-                x + bar_width - 1, h // 2 + bar_h,
-                fill=color, outline=""
-            )
+        # Scanning effect
+        self.scan_pos = (self.scan_pos + 3) % w
+        self.create_line(self.scan_pos, bar_y, self.scan_pos, bar_y + bar_h,
+                        fill=Colors.WHITE, width=2)
         
         self.after(50, self._animate)
     
@@ -524,77 +519,16 @@ class WaveformVisualizer(tk.Canvas):
         self._animating = False
 
 
-# ==================== WEAPON BAY BUTTON ====================
-class WeaponButton(tk.Canvas):
-    """Stylized weapon bay command button."""
+# ==================== CIRCULAR RADAR ====================
+class CircularRadar(tk.Canvas):
+    """Circular radar display with sweep animation"""
     
-    def __init__(self, parent, text, command=None, width=180, height=38, **kwargs):
-        super().__init__(parent, width=width, height=height, bg=Colors.BG_PANEL,
-                        highlightthickness=0, **kwargs)
-        self.text = text
-        self.btn_width = width
-        self.btn_height = height
-        self.command = command
-        self.hover = False
-        
-        self.bind("<Enter>", lambda e: self._set_hover(True))
-        self.bind("<Leave>", lambda e: self._set_hover(False))
-        self.bind("<Button-1>", self._on_click)
-        
-        self._draw()
-    
-    def _set_hover(self, hover):
-        self.hover = hover
-        self._draw()
-    
-    def _on_click(self, event):
-        if self.command:
-            self.command()
-    
-    def _draw(self):
-        self.delete("all")
-        w, h = self.btn_width, self.btn_height
-        cx, cy = w / 2, h / 2
-        
-        if self.hover:
-            fill = Colors.ORANGE_GLOW
-            text_color = Colors.BG_DEEP
-            border = Colors.ORANGE_GLOW
-        else:
-            fill = Colors.BG_PANEL
-            text_color = Colors.CYAN_GLOW
-            border = Colors.CYAN_DIM
-        
-        # Hexagonal shape
-        points = [
-            12, 4,
-            w - 12, 4,
-            w - 4, h // 2,
-            w - 12, h - 4,
-            12, h - 4,
-            4, h // 2
-        ]
-        self.create_polygon(points, fill=fill, outline=border, width=2)
-        
-        # Tech decorations
-        self.create_line(16, 10, 32, 10, fill=border, width=1)
-        self.create_line(w - 32, h - 10, w - 16, h - 10, fill=border, width=1)
-        
-        # Text - perfectly centered
-        self.create_text(cx, cy, text=self.text, fill=text_color,
-                        font=("Consolas", 9, "bold"), anchor="center")
-
-
-# ==================== AI CORE ANIMATION ====================
-class AICore(tk.Canvas):
-    """Rotating orbital ring AI status indicator."""
-    
-    def __init__(self, parent, size=60, **kwargs):
-        super().__init__(parent, width=size, height=size, bg=Colors.BG_PANEL,
-                        highlightthickness=0, **kwargs)
+    def __init__(self, parent, size=120, **kwargs):
+        super().__init__(parent, width=size, height=size,
+                        bg=Colors.BG_DEEP, highlightthickness=0, **kwargs)
         self.size = size
         self.center = size // 2
-        self.angle = 0
+        self.sweep_angle = 0
         self.state = "offline"
         self._animating = True
         self._animate()
@@ -608,104 +542,326 @@ class AICore(tk.Canvas):
         
         self.delete("all")
         c = self.center
+        r = c - 10
         
-        color = Colors.CYAN_GLOW if self.state != "offline" else Colors.CYAN_DIM
+        # Outer circle
+        self.create_oval(5, 5, self.size - 5, self.size - 5,
+                        outline=Colors.CYAN_DIM, width=2)
         
-        self.create_oval(5, 5, self.size - 5, self.size - 5, outline=color, width=2)
+        # Inner circles
+        for i in range(1, 4):
+            ri = r * i / 4
+            self.create_oval(c - ri, c - ri, c + ri, c + ri,
+                           outline=Colors.CYAN_DARK, width=1)
         
-        for i in range(3):
-            orbit_angle = self.angle + i * (2 * math.pi / 3)
-            ox = c + (c - 10) * math.cos(orbit_angle)
-            oy = c + (c - 10) * math.sin(orbit_angle)
-            self.create_oval(ox - 3, oy - 3, ox + 3, oy + 3, fill=color, outline="")
+        # Cross lines
+        self.create_line(c, 5, c, self.size - 5, fill=Colors.CYAN_DARK, width=1)
+        self.create_line(5, c, self.size - 5, c, fill=Colors.CYAN_DARK, width=1)
         
-        pulse = (math.sin(self.angle * 2) + 1) / 2
-        core_size = 8 + pulse * 3
-        self.create_oval(c - core_size, c - core_size, c + core_size, c + core_size,
-                        fill=color if self.state != "offline" else Colors.BG_PANEL,
-                        outline=color, width=2)
+        # Tick marks
+        for i in range(36):
+            angle = i * math.pi / 18
+            inner = r - 5
+            outer = r
+            if i % 3 == 0:
+                inner = r - 10
+            x1 = c + inner * math.cos(angle)
+            y1 = c + inner * math.sin(angle)
+            x2 = c + outer * math.cos(angle)
+            y2 = c + outer * math.sin(angle)
+            self.create_line(x1, y1, x2, y2, fill=Colors.CYAN_DIM, width=1)
         
-        self.angle += 0.05
-        self.after(30, self._animate)
+        # Sweep line (if active)
+        if self.state != "offline":
+            color = Colors.CYAN_GLOW if self.state == "online" else Colors.ORANGE_GLOW
+            end_x = c + r * math.cos(self.sweep_angle)
+            end_y = c - r * math.sin(self.sweep_angle)
+            
+            # Sweep trail
+            for i in range(20):
+                trail_angle = self.sweep_angle - i * 0.05
+                tr = r * (1 - i * 0.02)
+                tx = c + tr * math.cos(trail_angle)
+                ty = c - tr * math.sin(trail_angle)
+                self.create_line(c, c, tx, ty, fill=Colors.CYAN_DIM, width=1)
+            
+            self.create_line(c, c, end_x, end_y, fill=color, width=2)
+            
+            self.sweep_angle += 0.1
+        
+        # Center dot
+        self.create_oval(c - 3, c - 3, c + 3, c + 3, fill=Colors.CYAN_GLOW, outline="")
+        
+        self.after(50, self._animate)
     
     def stop(self):
         self._animating = False
 
 
-# ==================== FLIGHT DATA RECORDER ====================
-class FlightDataRecorder(tk.Frame):
-    """Mission log display with hidden scrollbar (mouse wheel scroll enabled)."""
+# ==================== CHEVRON INDICATOR ====================
+class ChevronIndicator(tk.Canvas):
+    """Animated chevron/arrow indicator"""
+    
+    def __init__(self, parent, width=80, height=60, **kwargs):
+        super().__init__(parent, width=width, height=height,
+                        bg=Colors.BG_DEEP, highlightthickness=0, **kwargs)
+        self.w = width
+        self.h = height
+        self.pulse = 0
+        self.state = "offline"
+        self._animating = True
+        self._animate()
+    
+    def set_state(self, state):
+        self.state = state
+    
+    def _animate(self):
+        if not self._animating:
+            return
+        
+        self.delete("all")
+        
+        self.pulse += 0.15
+        pulse_val = (math.sin(self.pulse) + 1) / 2
+        
+        color = Colors.CYAN_GLOW if self.state != "offline" else Colors.CYAN_DIM
+        
+        # Draw multiple chevrons with animation
+        for i in range(3):
+            offset = i * 20 - 20
+            alpha = max(0.3, 1 - i * 0.3 - pulse_val * 0.3)
+            
+            # Chevron shape pointing right
+            points = [
+                5 + offset, 10,
+                self.w - 30 + offset, self.h // 2,
+                5 + offset, self.h - 10,
+                15 + offset, self.h // 2
+            ]
+            
+            chev_color = color if alpha > 0.5 else Colors.CYAN_DIM
+            self.create_polygon(points, fill="", outline=chev_color, width=2)
+        
+        self.after(50, self._animate)
+    
+    def stop(self):
+        self._animating = False
+
+
+# ==================== STATUS DOTS ====================
+class StatusDots(tk.Canvas):
+    """Status indicator dots"""
+    
+    def __init__(self, parent, count=4, **kwargs):
+        super().__init__(parent, width=count * 25, height=20,
+                        bg=Colors.BG_DEEP, highlightthickness=0, **kwargs)
+        self.count = count
+        self.active = 0
+        self.pulse = 0
+        self._animating = True
+        self._animate()
+    
+    def set_active(self, count):
+        self.active = min(count, self.count)
+    
+    def _animate(self):
+        if not self._animating:
+            return
+        
+        self.delete("all")
+        self.pulse += 0.1
+        
+        for i in range(self.count):
+            x = 12 + i * 25
+            y = 10
+            
+            if i < self.active:
+                # Active dot with glow
+                glow_size = 8 + math.sin(self.pulse + i) * 2
+                self.create_oval(x - glow_size, y - glow_size, 
+                               x + glow_size, y + glow_size,
+                               fill=Colors.CYAN_DIM, outline="")
+                self.create_oval(x - 5, y - 5, x + 5, y + 5,
+                               fill=Colors.CYAN_GLOW, outline="")
+            else:
+                # Inactive dot
+                self.create_oval(x - 5, y - 5, x + 5, y + 5,
+                               fill=Colors.CYAN_DARK, outline=Colors.CYAN_DIM, width=1)
+        
+        self.after(50, self._animate)
+    
+    def stop(self):
+        self._animating = False
+
+
+# ==================== INFO PANEL ====================
+class InfoPanel(tk.Canvas):
+    """Sci-fi styled information panel with corner accents"""
+    
+    def __init__(self, parent, width=260, height=90, title="", **kwargs):
+        super().__init__(parent, width=width, height=height,
+                        bg=Colors.BG_DEEP, highlightthickness=0, **kwargs)
+        self.panel_width = width
+        self.panel_height = height
+        self.title = title
+        self.content_lines = []
+        self._draw()
+    
+    def set_content(self, lines):
+        self.content_lines = lines
+        self._draw()
+    
+    def _draw(self):
+        self.delete("all")
+        w, h = self.panel_width, self.panel_height
+        
+        # Main border
+        self.create_rectangle(8, 8, w - 8, h - 8,
+                            outline=Colors.CYAN_DIM, width=2)
+        
+        # Corner accents
+        corner_size = 15
+        accent_color = Colors.CYAN_GLOW
+        
+        # Top-left
+        self.create_line(3, 3, 3 + corner_size, 3, fill=accent_color, width=2)
+        self.create_line(3, 3, 3, 3 + corner_size, fill=accent_color, width=2)
+        
+        # Top-right
+        self.create_line(w - 3, 3, w - 3 - corner_size, 3, fill=accent_color, width=2)
+        self.create_line(w - 3, 3, w - 3, 3 + corner_size, fill=accent_color, width=2)
+        
+        # Bottom-left
+        self.create_line(3, h - 3, 3 + corner_size, h - 3, fill=accent_color, width=2)
+        self.create_line(3, h - 3, 3, h - 3 - corner_size, fill=accent_color, width=2)
+        
+        # Bottom-right
+        self.create_line(w - 3, h - 3, w - 3 - corner_size, h - 3, fill=accent_color, width=2)
+        self.create_line(w - 3, h - 3, w - 3, h - 3 - corner_size, fill=accent_color, width=2)
+        
+        # Title
+        if self.title:
+            self.create_text(w // 2, 18, text=self.title,
+                           font=("Consolas", 9, "bold"), fill=Colors.CYAN_GLOW)
+        
+        # Content
+        y = 35
+        for line in self.content_lines[:4]:
+            self.create_text(15, y, text=line, anchor="w",
+                           font=("Consolas", 8), fill=Colors.TEXT_DIM)
+            y += 14
+
+
+# ==================== HEXAGONAL BORDER ====================
+class HexBorder(tk.Canvas):
+    """Bottom hexagonal circuit border"""
+    
+    def __init__(self, parent, height=50, **kwargs):
+        super().__init__(parent, height=height,
+                        bg=Colors.BG_DEEP, highlightthickness=0, **kwargs)
+        self.border_height = height
+        self.pulse = 0
+        self._animating = True
+        self.bind("<Configure>", lambda e: self._draw())
+        self._animate()
+    
+    def _animate(self):
+        if not self._animating:
+            return
+        
+        self.pulse += 0.05
+        self._draw()
+        self.after(100, self._animate)
+    
+    def _draw(self):
+        self.delete("all")
+        w = self.winfo_width() or 1130
+        h = self.border_height
+        
+        # Hexagonal pattern points
+        segments = 12
+        seg_width = w / segments
+        
+        points = [0, h]  # Start bottom-left
+        
+        for i in range(segments + 1):
+            x = i * seg_width
+            # Alternate heights for hexagonal effect
+            if i % 2 == 0:
+                y = h - 15
+            else:
+                y = h - 30 - math.sin(self.pulse + i * 0.5) * 3
+            points.extend([x, y])
+        
+        points.extend([w, h])  # End bottom-right
+        
+        # Draw glowing border
+        for offset in range(3, 0, -1):
+            glow_points = points.copy()
+            self.create_line(glow_points, fill=Colors.CYAN_DIM if offset > 1 else Colors.CYAN_GLOW,
+                           width=offset, smooth=False)
+        
+        # Add node points at vertices
+        for i in range(segments + 1):
+            x = i * seg_width
+            y = h - 15 if i % 2 == 0 else h - 30
+            
+            # Glowing node
+            node_size = 3 + math.sin(self.pulse + i) * 1
+            self.create_oval(x - node_size, y - node_size, x + node_size, y + node_size,
+                           fill=Colors.CYAN_GLOW, outline="")
+    
+    def stop(self):
+        self._animating = False
+
+
+# ==================== MISSION LOG ====================
+class MissionLog(tk.Frame):
+    """Mission log display panel"""
     
     def __init__(self, parent, **kwargs):
         super().__init__(parent, bg=Colors.BG_DEEP, **kwargs)
         
-        # Header
-        header = tk.Frame(self, bg=Colors.BG_DEEP)
-        header.pack(fill="x", pady=(0, 5))
-        
-        tk.Label(header, text="◆ MISSION LOG ◆",
-                font=("Consolas", 9, "bold"),
-                fg=Colors.CYAN_GLOW, bg=Colors.BG_DEEP).pack(side="left")
-        
-        # Clear button
-        clr = tk.Label(header, text="[CLR]", font=("Consolas", 8),
-                      fg=Colors.TEXT_DIM, bg=Colors.BG_DEEP, cursor="hand2")
-        clr.pack(side="right")
-        clr.bind("<Button-1>", lambda e: self.clear())
-        clr.bind("<Enter>", lambda e: clr.config(fg=Colors.CYAN_GLOW))
-        clr.bind("<Leave>", lambda e: clr.config(fg=Colors.TEXT_DIM))
-        
-        # Log area with border - NO visible scrollbar
-        border = tk.Frame(self, bg=Colors.CYAN_DIM, padx=2, pady=2)
-        border.pack(fill="both", expand=True)
-        
-        # Text widget without scrollbar (mouse wheel scrolling works)
-        self.log = tk.Text(border, bg=Colors.BG_DEEP, fg=Colors.CYAN_GLOW,
+        # Create text widget with custom styling
+        self.log = tk.Text(self, bg=Colors.BG_DEEP, fg=Colors.CYAN_GLOW,
                           font=("Consolas", 9), wrap="word",
                           insertbackground=Colors.CYAN_GLOW,
-                          selectbackground=Colors.BLUE_DIM,
-                          relief="flat", padx=8, pady=8)
+                          relief="flat", padx=10, pady=10,
+                          highlightthickness=1,
+                          highlightbackground=Colors.CYAN_DIM)
         self.log.pack(fill="both", expand=True)
         self.log.config(state="disabled")
         
-        # Enable mouse wheel scrolling
-        self.log.bind("<MouseWheel>", self._on_mousewheel)
-        self.log.bind("<Button-4>", self._on_mousewheel)  # Linux scroll up
-        self.log.bind("<Button-5>", self._on_mousewheel)  # Linux scroll down
-        
-        # Tags
+        # Configure tags
         self.log.tag_configure("time", foreground=Colors.TEXT_DIM)
         self.log.tag_configure("info", foreground=Colors.CYAN_GLOW)
         self.log.tag_configure("warn", foreground=Colors.ORANGE_GLOW)
         self.log.tag_configure("error", foreground=Colors.RED_ALERT)
         self.log.tag_configure("success", foreground=Colors.GREEN_OK)
+        
+        # Mouse wheel scrolling
+        self.log.bind("<MouseWheel>", self._on_scroll)
     
-    def _on_mousewheel(self, event):
-        """Handle mouse wheel scrolling."""
-        if event.num == 4:  # Linux scroll up
-            self.log.yview_scroll(-3, "units")
-        elif event.num == 5:  # Linux scroll down
-            self.log.yview_scroll(3, "units")
-        else:  # Windows
-            self.log.yview_scroll(int(-1 * (event.delta / 120)), "units")
+    def _on_scroll(self, event):
+        self.log.yview_scroll(int(-1 * (event.delta / 120)), "units")
         return "break"
     
     def write(self, message):
-        """Write message to log."""
         self.log.config(state="normal")
         
         time_str = datetime.now().strftime("%H:%M:%S")
         
         msg_lower = message.lower()
-        if "error" in msg_lower or "fault" in msg_lower or "!!" in message:
+        if "error" in msg_lower or "fault" in msg_lower:
             tag = "error"
-        elif "warning" in msg_lower or "caution" in msg_lower:
+        elif "warning" in msg_lower:
             tag = "warn"
-        elif "success" in msg_lower or "splash" in msg_lower or "✅" in message:
+        elif "success" in msg_lower or "complete" in msg_lower:
             tag = "success"
         else:
             tag = "info"
         
+        # Clean emojis
         clean = message
         for emoji in ["🤖", "🚀", "🔊", "📝", "🟢", "🟡", "❓", "❌", "⚠️", "✅", "👋", "🗣️", "⚡", "💬", "📋", "⏹️", "🛑", "🔵", "🖥️", "🧠"]:
             clean = clean.replace(emoji, "")
@@ -721,80 +877,17 @@ class FlightDataRecorder(tk.Frame):
         self.log.config(state="disabled")
 
 
-# ==================== TELEMETRY BAR ====================
-class TelemetryBar(tk.Canvas):
-    """Bottom telemetry strip with scrolling data."""
-    
-    def __init__(self, parent, height=35, **kwargs):
-        super().__init__(parent, height=height, bg=Colors.BG_DEEP,
-                        highlightthickness=0, **kwargs)
-        self.bar_height = height
-        self.scroll_offset = 0
-        self._animating = True
-        self._animate()
-    
-    def _animate(self):
-        if not self._animating:
-            return
-        
-        self.delete("all")
-        w = self.winfo_width() or 1366
-        h = self.bar_height
-        
-        self.create_line(0, 0, w, 0, fill=Colors.CYAN_DIM, width=2)
-        
-        data = [
-            f"LAT: {random.uniform(30, 40):.4f}°N",
-            f"LON: {random.uniform(-120, -110):.4f}°W",
-            f"ALT: {random.randint(28000, 42000):,} FT",
-            f"SPD: MACH {random.uniform(0.85, 1.5):.2f}",
-            f"HDG: {random.randint(0, 359):03d}°",
-            f"G: +{random.uniform(0.8, 2.5):.1f}",
-            f"FUEL: {random.randint(60, 95)}%",
-            f"SYS: NOMINAL",
-        ]
-        
-        seg_width = w / len(data)
-        for i, text in enumerate(data):
-            x = i * seg_width + seg_width / 2
-            
-            if i > 0:
-                self.create_line(i * seg_width, 5, i * seg_width, h - 5,
-                               fill=Colors.CYAN_DIM, width=1)
-            
-            self.create_text(x, h // 2 + 2, text=text,
-                           fill=Colors.CYAN_GLOW, font=("Consolas", 8))
-        
-        self.after(300, self._animate)
-    
-    def stop(self):
-        self._animating = False
-
-
-# ==================== MAIN HUD ====================
+# ==================== MAIN FOX-3 HUD ====================
 class Fox3HUD(tk.Tk):
-    """FOX-3 Combat Systems Interface - High Fidelity HUD
+    """FOX-3 Tactical Combat Interface"""
     
-    Fixed Layout: 1366x768
-    - Left Panel:   280px
-    - Center Panel: Flexible (fills remaining ~746px)
-    - Right Panel:  280px
-    - Margins:      10px on each side
-    """
-    
-    # Layout constants
-    WINDOW_WIDTH = 1366
-    WINDOW_HEIGHT = 768
-    MARGIN = 10
-    LEFT_WIDTH = 280
-    RIGHT_WIDTH = 280
-    HEADER_HEIGHT = 45
-    TELEMETRY_HEIGHT = 35
+    WINDOW_WIDTH = 1130
+    WINDOW_HEIGHT = 600
     
     def __init__(self):
         super().__init__()
         
-        self.title("FOX-3 // COMBAT SYSTEMS")
+        self.title("FOX-3 // TACTICAL SYSTEMS")
         self.geometry(f"{self.WINDOW_WIDTH}x{self.WINDOW_HEIGHT}")
         self.resizable(False, False)
         self.configure(bg=Colors.BG_DEEP)
@@ -805,197 +898,163 @@ class Fox3HUD(tk.Tk):
         
         self._build_ui()
         
-        self.log("FOX-3 COMBAT SYSTEMS INITIALIZED")
-        self.log("ALL SUBSYSTEMS: NOMINAL")
-        self.log("AWAITING PILOT AUTHORIZATION")
+        self.log("FOX-3 TACTICAL SYSTEMS INITIALIZED")
+        self.log("ALL SUBSYSTEMS: STANDBY")
+        self.log("AWAITING PILOT AUTHORIZATION...")
         
         self.protocol("WM_DELETE_WINDOW", self._on_close)
     
     def _build_ui(self):
-        """Build the complete interface using grid layout."""
-        # Background canvas
-        self.bg_canvas = CircuitBackground(self)
-        self.bg_canvas.place(x=0, y=0, relwidth=1, relheight=1)
+        """Build the tactical interface"""
         
-        # Main container frame with fixed margins
+        # Main container
         main = tk.Frame(self, bg=Colors.BG_DEEP)
-        main.place(
-            x=self.MARGIN, 
-            y=self.MARGIN, 
-            width=self.WINDOW_WIDTH - 2 * self.MARGIN,
-            height=self.WINDOW_HEIGHT - 2 * self.MARGIN
-        )
+        main.pack(fill="both", expand=True, padx=15, pady=10)
         
-        # Configure grid weights
-        main.grid_rowconfigure(0, weight=0, minsize=self.HEADER_HEIGHT)  # Header
-        main.grid_rowconfigure(1, weight=1)  # Content
-        main.grid_rowconfigure(2, weight=0, minsize=self.TELEMETRY_HEIGHT)  # Telemetry
+        # === TOP SECTION ===
+        top = tk.Frame(main, bg=Colors.BG_DEEP)
+        top.pack(fill="x", pady=(0, 10))
         
-        # Strict column widths: 280 + 746 + 280 = 1306 (fits in 1346 with 10px gaps)
-        main.grid_columnconfigure(0, weight=0, minsize=self.LEFT_WIDTH)
-        main.grid_columnconfigure(1, weight=1)  # Center expands
-        main.grid_columnconfigure(2, weight=0, minsize=self.RIGHT_WIDTH)
+        # Left: Loading bar and status
+        top_left = tk.Frame(top, bg=Colors.BG_DEEP)
+        top_left.pack(side="left")
         
-        # Build sections
-        self._build_header(main)
-        self._build_left_panel(main)
-        self._build_center_panel(main)
-        self._build_right_panel(main)
-        self._build_telemetry(main)
-    
-    def _build_header(self, parent):
-        """Build header bar."""
-        header = tk.Frame(parent, bg=Colors.BG_DEEP, height=self.HEADER_HEIGHT)
-        header.grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 5))
-        header.grid_propagate(False)
+        self.loading_bar = LoadingBar(top_left, width=280, height=25)
+        self.loading_bar.pack(anchor="w")
+        self.animated.append(self.loading_bar)
         
-        # Left - Title (reduced font size to prevent overlap)
-        tk.Label(header, text="FOX-3 // COMBAT SYSTEMS",
-                font=("Consolas", 14, "bold"),
-                fg=Colors.CYAN_GLOW, bg=Colors.BG_DEEP).pack(side="left", padx=(5, 0))
+        # Center: Status dots
+        top_center = tk.Frame(top, bg=Colors.BG_DEEP)
+        top_center.pack(side="left", expand=True)
         
-        # Right container
-        right = tk.Frame(header, bg=Colors.BG_DEEP)
-        right.pack(side="right", padx=(0, 5))
+        self.status_dots = StatusDots(top_center, count=4)
+        self.status_dots.pack()
+        self.status_dots.set_active(1)
+        self.animated.append(self.status_dots)
         
-        # Clock (first, so it's rightmost)
-        self.clock = tk.Label(right, text="00:00:00",
-                             font=("Consolas", 16, "bold"),
-                             fg=Colors.CYAN_GLOW, bg=Colors.BG_DEEP)
-        self.clock.pack(side="right")
-        self._update_clock()
+        # Right: Input field placeholder
+        top_right = tk.Frame(top, bg=Colors.BG_DEEP)
+        top_right.pack(side="right")
         
-        # Status indicator
-        status_frame = tk.Frame(right, bg=Colors.BG_DEEP)
-        status_frame.pack(side="right", padx=(0, 20))
+        self.input_frame = tk.Frame(top_right, bg=Colors.CYAN_DIM, padx=2, pady=2)
+        self.input_frame.pack()
+        self.input_display = tk.Label(self.input_frame, text="", width=25,
+                                      bg=Colors.BG_DEEP, fg=Colors.CYAN_GLOW,
+                                      font=("Consolas", 10), anchor="w", padx=5)
+        self.input_display.pack()
         
-        self.status_dot = tk.Canvas(status_frame, width=10, height=10,
-                                   bg=Colors.BG_DEEP, highlightthickness=0)
-        self.status_dot.pack(side="left", padx=(0, 5))
-        self.status_dot.create_oval(1, 1, 9, 9, fill=Colors.TEXT_DIM, outline="")
+        # === MIDDLE SECTION ===
+        middle = tk.Frame(main, bg=Colors.BG_DEEP)
+        middle.pack(fill="both", expand=True)
         
-        self.status_label = tk.Label(status_frame, text="OFFLINE",
-                                    font=("Consolas", 10, "bold"),
-                                    fg=Colors.TEXT_DIM, bg=Colors.BG_DEEP)
-        self.status_label.pack(side="left")
-    
-    def _build_left_panel(self, parent):
-        """Build left avionics panel."""
-        left = tk.Frame(parent, bg=Colors.BG_PANEL, width=self.LEFT_WIDTH)
-        left.grid(row=1, column=0, sticky="nsew", padx=(0, 5))
-        left.grid_propagate(False)
+        # Left panel
+        left_panel = tk.Frame(middle, bg=Colors.BG_DEEP, width=280)
+        left_panel.pack(side="left", fill="y", padx=(0, 15))
+        left_panel.pack_propagate(False)
         
-        inner = tk.Frame(left, bg=Colors.BG_PANEL)
-        inner.pack(fill="both", expand=True, padx=8, pady=8)
+        # Chevron and Radar row
+        top_row = tk.Frame(left_panel, bg=Colors.BG_DEEP)
+        top_row.pack(fill="x", pady=(0, 10))
         
-        # Radar
-        tk.Label(inner, text="◆ TACTICAL RADAR ◆",
-                font=("Consolas", 9, "bold"),
-                fg=Colors.CYAN_GLOW, bg=Colors.BG_PANEL).pack(pady=(0, 5))
+        self.chevron = ChevronIndicator(top_row, width=80, height=60)
+        self.chevron.pack(side="left", padx=(0, 10))
+        self.animated.append(self.chevron)
         
-        self.radar = AdvancedRadar(inner, size=240)
-        self.radar.pack()
+        self.radar = CircularRadar(top_row, size=120)
+        self.radar.pack(side="left")
         self.animated.append(self.radar)
         
-        # ENGAGE BUTTON
-        tk.Label(inner, text="◆ PRIMARY CONTROL ◆",
-                font=("Consolas", 9, "bold"),
-                fg=Colors.ORANGE_GLOW, bg=Colors.BG_PANEL).pack(pady=(12, 5))
+        # Info panels
+        self.panel1 = InfoPanel(left_panel, width=260, height=90, title="SYSTEM STATUS")
+        self.panel1.pack(pady=(0, 10))
+        self.panel1.set_content(["MODE: STANDBY", "VOICE: READY", "AI: LOADED", "NET: CONNECTED"])
         
-        self.engage_btn = EngageButton(inner, command=self._toggle_system, width=240, height=55)
-        self.engage_btn.pack(pady=5)
-        self.animated.append(self.engage_btn)
+        self.panel2 = InfoPanel(left_panel, width=260, height=90, title="MISSION DATA")
+        self.panel2.pack()
+        self.panel2.set_content(["COMMANDS: 0", "SUCCESS: 0", "ERRORS: 0", "UPTIME: 00:00"])
         
-        # AI Core
-        tk.Label(inner, text="◆ AI STATUS ◆",
-                font=("Consolas", 9, "bold"),
-                fg=Colors.CYAN_GLOW, bg=Colors.BG_PANEL).pack(pady=(12, 5))
+        # Center panel - Run button
+        center_panel = tk.Frame(middle, bg=Colors.BG_DEEP)
+        center_panel.pack(side="left", fill="both", expand=True, padx=15)
         
-        self.ai_core = AICore(inner, size=55)
-        self.ai_core.pack()
-        self.animated.append(self.ai_core)
+        # Center the run button vertically
+        center_spacer = tk.Frame(center_panel, bg=Colors.BG_DEEP)
+        center_spacer.pack(expand=True)
+        
+        self.run_button = CentralRunButton(center_panel, command=self._toggle_system, size=220)
+        self.run_button.pack()
+        self.animated.append(self.run_button)
+        
+        center_spacer2 = tk.Frame(center_panel, bg=Colors.BG_DEEP)
+        center_spacer2.pack(expand=True)
+        
+        # Right panel - F-16 and log
+        right_panel = tk.Frame(middle, bg=Colors.BG_DEEP, width=320)
+        right_panel.pack(side="right", fill="y", padx=(15, 0))
+        right_panel.pack_propagate(False)
+        
+        self.f16 = RotatingF16(right_panel, size=280)
+        self.f16.pack(pady=(0, 10))
+        self.animated.append(self.f16)
+        
+        # Mini log
+        log_label = tk.Label(right_panel, text="MISSION LOG", 
+                            font=("Consolas", 9, "bold"),
+                            fg=Colors.CYAN_GLOW, bg=Colors.BG_DEEP)
+        log_label.pack(anchor="w")
+        
+        self.mission_log = MissionLog(right_panel)
+        self.mission_log.pack(fill="both", expand=True)
+        
+        # === BOTTOM SECTION ===
+        bottom = tk.Frame(main, bg=Colors.BG_DEEP)
+        bottom.pack(fill="x", pady=(10, 0))
+        
+        self.hex_border = HexBorder(bottom, height=40)
+        self.hex_border.pack(fill="x")
+        self.animated.append(self.hex_border)
+        
+        # Logo
+        logo = tk.Label(main, text="FOX-3", font=("Consolas", 14, "bold"),
+                       fg=Colors.CYAN_GLOW, bg=Colors.BG_DEEP)
+        logo.place(relx=1.0, rely=1.0, anchor="se", x=-10, y=-5)
+        
+        # Start uptime counter
+        self.start_time = datetime.now()
+        self.command_count = 0
+        self.success_count = 0
+        self.error_count = 0
+        self._update_stats()
     
-    def _build_center_panel(self, parent):
-        """Build center data core panel."""
-        center = tk.Frame(parent, bg=Colors.BG_DEEP)
-        center.grid(row=1, column=1, sticky="nsew", padx=5)
+    def _update_stats(self):
+        """Update statistics panels"""
+        uptime = datetime.now() - self.start_time
+        mins = int(uptime.total_seconds() // 60)
+        secs = int(uptime.total_seconds() % 60)
         
-        # Flight Data Recorder
-        self.fdr = FlightDataRecorder(center)
-        self.fdr.pack(fill="both", expand=True)
+        self.panel2.set_content([
+            f"COMMANDS: {self.command_count}",
+            f"SUCCESS: {self.success_count}",
+            f"ERRORS: {self.error_count}",
+            f"UPTIME: {mins:02d}:{secs:02d}"
+        ])
         
-        # Waveform visualizer
-        tk.Label(center, text="◆ VOICE COMMS ◆",
-                font=("Consolas", 8, "bold"),
-                fg=Colors.CYAN_GLOW, bg=Colors.BG_DEEP).pack(pady=(8, 2))
-        
-        self.waveform = WaveformVisualizer(center)
-        self.waveform.pack(fill="x")
-        self.animated.append(self.waveform)
-    
-    def _build_right_panel(self, parent):
-        """Build right auxiliary panel."""
-        right = tk.Frame(parent, bg=Colors.BG_PANEL, width=self.RIGHT_WIDTH)
-        right.grid(row=1, column=2, sticky="nsew", padx=(5, 0))
-        right.grid_propagate(False)
-        
-        inner = tk.Frame(right, bg=Colors.BG_PANEL)
-        inner.pack(fill="both", expand=True, padx=10, pady=8)
-        
-        # Power bar
-        tk.Label(inner, text="◆ POWER ◆",
-                font=("Consolas", 8, "bold"),
-                fg=Colors.CYAN_GLOW, bg=Colors.BG_PANEL).pack(pady=(0, 3))
-        
-        self.power_bar = PowerBar(inner)
-        self.power_bar.pack()
-        self.animated.append(self.power_bar)
-        
-        # Weapons bay
-        tk.Label(inner, text="◆ WEAPONS BAY ◆",
-                font=("Consolas", 8, "bold"),
-                fg=Colors.CYAN_GLOW, bg=Colors.BG_PANEL).pack(pady=(15, 5))
-        
-        weapons = [
-            ("DEPLOY: SPOTIFY", "Play music on Spotify"),
-            ("DEPLOY: BROWSER", "Open YouTube"),
-            ("DEPLOY: NOTEPAD", "Open Notepad"),
-            ("SYSTEM CHECK", "Status report"),
-        ]
-        
-        for label, cmd in weapons:
-            btn = WeaponButton(inner, label, command=lambda c=cmd: self._quick_action(c), width=180, height=36)
-            btn.pack(pady=2)
-        
-        # Spacer
-        tk.Label(inner, text="", bg=Colors.BG_PANEL).pack(fill="y", expand=True)
-        
-        # Abort button
-        abort = WeaponButton(inner, "■ MISSION ABORT", command=self._on_close, width=180, height=36)
-        abort.pack(pady=(5, 0))
-    
-    def _build_telemetry(self, parent):
-        """Build bottom telemetry bar."""
-        self.telemetry = TelemetryBar(parent, height=self.TELEMETRY_HEIGHT)
-        self.telemetry.grid(row=2, column=0, columnspan=3, sticky="ew", pady=(5, 0))
-        self.animated.append(self.telemetry)
-    
-    def _update_clock(self):
-        """Update clock display."""
-        self.clock.config(text=datetime.now().strftime("%H:%M:%S"))
-        self.after(1000, self._update_clock)
+        self.after(1000, self._update_stats)
     
     def _toggle_system(self):
-        """Toggle system engage/disengage."""
+        """Toggle system on/off"""
         if not self.is_running:
             self._engage()
         else:
             self._disengage()
     
     def _engage(self):
-        """Engage FOX-3 systems."""
-        self.log("PILOT AUTHORIZATION RECEIVED")
+        """Engage systems"""
+        self.log("PILOT AUTHORIZATION CONFIRMED")
         self.log("ENGAGING ALL SYSTEMS...")
+        
+        self.loading_bar.set_progress(100, "SYSTEMS ONLINE")
+        self.status_dots.set_active(4)
         
         self.engine = NovaBotEngine(
             status_callback=self._on_status_change,
@@ -1004,13 +1063,15 @@ class Fox3HUD(tk.Tk):
         self.engine.start()
         
         self.is_running = True
-        self.engage_btn.set_engaged(True)
+        self.run_button.set_engaged(True)
         self._set_status("online")
         
-        self.log("ALL SYSTEMS ONLINE - WEAPONS FREE")
+        self.panel1.set_content(["MODE: ACTIVE", "VOICE: LISTENING", "AI: PROCESSING", "NET: CONNECTED"])
+        
+        self.log("ALL SYSTEMS ONLINE - WEAPONS HOT")
     
     def _disengage(self):
-        """Disengage systems."""
+        """Disengage systems"""
         self.log("DISENGAGING SYSTEMS...")
         
         if self.engine:
@@ -1018,67 +1079,54 @@ class Fox3HUD(tk.Tk):
             self.engine = None
         
         self.is_running = False
-        self.engage_btn.set_engaged(False)
+        self.run_button.set_engaged(False)
         self._set_status("offline")
+        
+        self.loading_bar.set_progress(0, "SYSTEMS OFFLINE")
+        self.status_dots.set_active(1)
+        self.panel1.set_content(["MODE: STANDBY", "VOICE: READY", "AI: LOADED", "NET: CONNECTED"])
         
         self.log("FOX-3 RTB COMPLETE")
     
     def _set_status(self, status):
-        """Update all status indicators."""
+        """Update all status indicators"""
         self.radar.set_state(status)
-        self.ai_core.set_state(status)
-        self.waveform.set_active(status in ["listening", "processing", "executing"])
-        
-        colors = {
-            "offline": (Colors.TEXT_DIM, "OFFLINE"),
-            "online": (Colors.GREEN_OK, "ONLINE"),
-            "listening": (Colors.CYAN_GLOW, "SCANNING"),
-            "processing": (Colors.ORANGE_GLOW, "COMPUTING"),
-            "executing": (Colors.RED_ALERT, "ENGAGED"),
-        }
-        
-        color, text = colors.get(status, (Colors.TEXT_DIM, "UNKNOWN"))
-        self.status_dot.delete("all")
-        self.status_dot.create_oval(1, 1, 9, 9, fill=color, outline="")
-        self.status_label.config(text=text, fg=color)
+        self.f16.set_state(status)
+        self.chevron.set_state(status)
     
     def _on_status_change(self, status):
-        """Handle status change from engine."""
+        """Handle status change from engine"""
         self.after(0, lambda: self._process_status(status))
     
     def _process_status(self, status):
-        """Process status update."""
+        """Process status update"""
         s = status.lower()
         if "listening" in s:
             self._set_status("listening")
+            self.input_display.config(text="LISTENING...")
         elif "processing" in s or "planning" in s:
             self._set_status("processing")
+            self.input_display.config(text="PROCESSING...")
         elif "executing" in s:
             self._set_status("executing")
         elif "ready" in s or "complete" in s:
             self._set_status("online")
+            self.input_display.config(text="")
+            self.command_count += 1
+            self.success_count += 1
         elif "stop" in s:
             self._set_status("offline")
     
     def _on_log(self, message):
-        """Handle log message from engine."""
+        """Handle log from engine"""
         self.after(0, lambda: self.log(message))
     
     def log(self, message):
-        """Write to flight data recorder."""
-        self.fdr.write(message)
-    
-    def _quick_action(self, command):
-        """Execute quick action."""
-        if not self.is_running:
-            self.log("!! ENGAGE SYSTEMS FIRST")
-            return
-        
-        self.log(f">> DEPLOYING: {command.upper()}")
-        self.engine.execute_command(command)
+        """Write to mission log"""
+        self.mission_log.write(message)
     
     def _on_close(self):
-        """Clean shutdown."""
+        """Clean shutdown"""
         if self.is_running:
             self._disengage()
         
@@ -1090,7 +1138,7 @@ class Fox3HUD(tk.Tk):
 
 
 def main():
-    """Launch FOX-3 Combat Interface."""
+    """Launch FOX-3 Tactical Interface"""
     app = Fox3HUD()
     app.mainloop()
 
