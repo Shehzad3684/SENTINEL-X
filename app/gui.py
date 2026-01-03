@@ -149,6 +149,7 @@ class LivingOrb(tk.Canvas):
         # Audio reactive simulation
         self.audio_level = 0
         self.target_audio = 0.1
+        self._voice_level = 0.0  # Real-time voice input level
         
         # Click handling
         self.on_click = None
@@ -212,6 +213,13 @@ class LivingOrb(tk.Canvas):
         else:
             self.target_audio = 0.15
     
+    def set_voice_level(self, level):
+        """
+        Set real-time voice input level for dynamic orb sizing.
+        level: 0.0 (silent) to 1.0 (loud)
+        """
+        self._voice_level = max(0.0, min(1.0, level))
+    
     def _get_colors(self):
         """Get current color scheme based on state"""
         if self.state == "active" or self.state == "speaking":
@@ -249,8 +257,9 @@ class LivingOrb(tk.Canvas):
         self.delete("all")
         self.time += 0.016
         
-        # Smooth audio level transition
-        self.audio_level += (self.target_audio - self.audio_level) * 0.08
+        # Smooth audio level transition - combine target_audio with real-time voice level
+        combined_target = self.target_audio + self._voice_level * 0.5
+        self.audio_level += (combined_target - self.audio_level) * 0.15  # Faster response
         
         colors = self._get_colors()
         
@@ -693,6 +702,7 @@ class SentinelXApp:
         self.bot = NovaBotEngine()
         self.bot.log_callback = self._on_log
         self.bot.status_callback = self._on_status
+        self.bot.audio_level_callback = self._on_audio_level
         
         # Build UI
         self._build_ui()
@@ -868,6 +878,13 @@ class SentinelXApp:
             self.orb.set_state("processing")
         elif "fox-3:" in msg:
             self.orb.set_state("speaking")
+    
+    def _on_audio_level(self, level):
+        """Handle real-time audio level updates from the bot."""
+        try:
+            self.orb.set_voice_level(level)
+        except:
+            pass  # Ignore errors during shutdown
     
     def _on_status(self, status):
         s = status.lower()

@@ -13,6 +13,7 @@ LIGHTNING-FAST TTS SYSTEM:
 import asyncio
 import threading
 import os
+import audioop
 import speech_recognition as sr
 import edge_tts
 import pygame
@@ -116,16 +117,18 @@ class NovaBotEngine:
     Designed to run in a background thread with status callbacks.
     """
     
-    def __init__(self, status_callback=None, log_callback=None):
+    def __init__(self, status_callback=None, log_callback=None, audio_level_callback=None):
         """
         Initialize the bot engine.
         
         Args:
             status_callback: Function to call when status changes (e.g., "Listening", "Processing")
             log_callback: Function to call for log messages
+            audio_level_callback: Function to call with audio level (0.0 to 1.0) for visual feedback
         """
         self.status_callback = status_callback or (lambda s: None)
         self.log_callback = log_callback or (lambda m: print(m))
+        self.audio_level_callback = audio_level_callback or (lambda l: None)
         
         self._running = False
         self._thread = None
@@ -198,6 +201,82 @@ class NovaBotEngine:
         if text:
             self.instant_tts.speak(text)
     
+    async def _listen_with_level_monitoring(self, source, timeout=10):
+        """
+        Listen for audio while monitoring and reporting audio levels.
+        This makes the orb respond dynamically to voice input.
+        """
+        import time
+        
+        frames = []
+        sample_width = source.SAMPLE_WIDTH
+        sample_rate = source.SAMPLE_RATE
+        chunk_size = source.CHUNK
+        
+        # Calculate thresholds
+        energy_threshold = self.recognizer.energy_threshold
+        pause_threshold = self.recognizer.pause_threshold
+        
+        start_time = time.time()
+        speech_started = False
+        pause_start = None
+        
+        # Normalization factor for level (typical max RMS)
+        max_rms = 8000  # Typical max for speech
+        
+        while True:
+            elapsed = time.time() - start_time
+            
+            # Timeout check
+            if not speech_started and elapsed > timeout:
+                return None
+            
+            # Read audio chunk
+            try:
+                buffer = source.stream.read(chunk_size)
+                if len(buffer) == 0:
+                    break
+            except Exception:
+                break
+            
+            frames.append(buffer)
+            
+            # Calculate RMS (volume level)
+            try:
+                rms = audioop.rms(buffer, sample_width)
+            except:
+                rms = 0
+            
+            # Normalize to 0.0-1.0 range
+            level = min(1.0, rms / max_rms)
+            
+            # Boost the level for visual effect (square root for better perception)
+            visual_level = min(1.0, (level ** 0.5) * 1.5)
+            
+            # Report audio level to GUI
+            self.audio_level_callback(visual_level)
+            
+            # Check if speech is happening
+            is_speech = rms > energy_threshold
+            
+            if is_speech:
+                speech_started = True
+                pause_start = None
+            elif speech_started:
+                # In pause
+                if pause_start is None:
+                    pause_start = time.time()
+                elif time.time() - pause_start > pause_threshold:
+                    # Pause threshold exceeded, done listening
+                    break
+            
+            # Small async yield to keep GUI responsive
+            await asyncio.sleep(0.01)
+        
+        # Build AudioData from frames
+        frame_data = b''.join(frames)
+        return sr.AudioData(frame_data, sample_rate, sample_width)
+    
     async def _listen_and_execute(self):
         """Main listening and execution loop - LIGHTNING FAST."""
         self.log("\n" + "="*50)
@@ -211,13 +290,21 @@ class NovaBotEngine:
                 
                 with sr.Microphone() as source:
                     self.log("LISTENING... (Speak your command)")
-                    self.recognizer.adjust_for_ambient_noise(source, duration=0.3)  # Faster
+                    self.recognizer.adjust_for_ambient_noise(source, duration=0.3)
                     
                     try:
-                        audio = self.recognizer.listen(source, timeout=10)
+                        # Listen with audio level monitoring
+                        audio = await self._listen_with_level_monitoring(source, timeout=10)
+                        
+                        if audio is None:
+                            self.log("Timeout. Waiting...")
+                            continue
+                        
+                        self.audio_level_callback(0.0)  # Reset level
                         self.log("PROCESSING...")
                         self.set_status("Processing...")
                     except sr.WaitTimeoutError:
+                        self.audio_level_callback(0.0)
                         self.log("Timeout. Waiting...")
                         continue
                 

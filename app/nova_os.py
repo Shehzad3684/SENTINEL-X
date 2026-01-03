@@ -668,13 +668,42 @@ class NovaOS:
     
     def _type_with_clipboard(self, text):
         """Type text using clipboard for reliability (handles all characters)."""
+        if not text or not text.strip():
+            print("   ⚠️ Empty text, skipping clipboard paste")
+            return False
+        
         try:
             import pyperclip
+            # Clear clipboard first
+            pyperclip.copy('')
+            self.wait(0.1)
+            
+            # Copy new text
             pyperclip.copy(text)
+            self.wait(0.15)
+            
+            # Verify clipboard has content
+            verify = pyperclip.paste()
+            if not verify or len(verify) < 5:
+                print(f"   ⚠️ Clipboard verification failed, retrying...")
+                pyperclip.copy(text)
+                self.wait(0.2)
+            
+            # Paste
             self.press('ctrl', 'v')
-            self.wait(0.2)
+            self.wait(0.4)  # Longer wait for paste to complete
+            
+            print(f"   -> Pasted {len(text)} chars via clipboard")
+            return True
+            
         except ImportError:
+            print("   -> pyperclip not available, using typewrite...")
             pyautogui.write(text, interval=0.015)
+            return True
+        except Exception as e:
+            print(f"   ⚠️ Clipboard error: {e}, using typewrite...")
+            pyautogui.write(text[:500], interval=0.015)  # Limit for safety
+            return True
 
     def launch_word_robust(self):
         """
@@ -951,7 +980,7 @@ class NovaOS:
         
         # ==================== BODY PARAGRAPHS ====================
         for i, paragraph in enumerate(body_paragraphs, 1):
-            if not paragraph or len(paragraph) < 20:
+            if not paragraph or len(paragraph.strip()) < 20:
                 print(f"   -> Skipping empty body paragraph {i}")
                 continue
             
@@ -959,32 +988,34 @@ class NovaOS:
             
             # Write sub-heading
             self._type_with_clipboard(f"Section {i}")
-            self.wait(0.2)
+            self.wait(0.3)
             
             # Format: Bold
             self.press('home')
-            self.wait(0.1)
+            self.wait(0.15)
             pyautogui.hotkey('shift', 'end')
-            self.wait(0.1)
+            self.wait(0.15)
             self.press('ctrl', 'b')
-            self.wait(0.1)
+            self.wait(0.15)
             
             # New line, bold off
             self.press('end')
-            self.wait(0.1)
+            self.wait(0.15)
             self.press('enter')
-            self.wait(0.1)
+            self.wait(0.15)
             self.press('ctrl', 'b')
-            self.wait(0.1)
+            self.wait(0.15)
             
-            # Write paragraph content
-            self._type_with_clipboard(paragraph)
-            self.wait(0.3)
+            # Write paragraph content - CRITICAL: wait for completion
+            success = self._type_with_clipboard(paragraph)
+            if not success:
+                print(f"   ⚠️ Failed to write paragraph {i}")
+            self.wait(0.5)  # Extra wait after paragraph
             
             # Add spacing
             self.press('enter')
             self.press('enter')
-            self.wait(0.2)
+            self.wait(0.3)
             
             total_words += len(paragraph.split())
             sections_written += 1
