@@ -79,8 +79,8 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/Auto-BOT.git
-cd Auto-BOT
+git clone https://github.com/Shehzad3684/SENTINEL-X.git
+cd SENTINEL-X
 
 # Create virtual environment
 python -m venv .venv
@@ -276,7 +276,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 </p>
 
 <p align="center">
-  <a href="https://github.com/YOUR_USERNAME/Auto-BOT/issues">Report Bug</a>
+  <a href="https://github.com/Shehzad3684/SENTINEL-X/issues">Report Bug</a>
   ·
-  <a href="https://github.com/YOUR_USERNAME/Auto-BOT/issues">Request Feature</a>
+  <a href="https://github.com/Shehzad3684/SENTINEL-X/issues">Request Feature</a>
 </p>
