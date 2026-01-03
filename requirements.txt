@@ -1,0 +1,22 @@
+# Auto-BOT Requirements
+# Voice-controlled desktop automation for Windows
+
+# Core Dependencies
+python-dotenv>=1.0.0       # Environment variable management
+pyautogui>=0.9.54          # GUI automation (mouse, keyboard)
+pygetwindow>=0.0.9         # Window management
+psutil>=5.9.0              # System monitoring
+pygame>=2.5.0              # Audio playback
+pyperclip>=1.8.0           # Clipboard access (reliable text entry)
+pywin32>=306               # Windows COM automation (MS Word God Mode)
+
+# Voice & AI
+SpeechRecognition>=3.10.0  # Voice recognition
+edge-tts>=6.1.0            # Text-to-speech
+groq>=0.4.0                # LLM API client
+
+# GUI
+customtkinter>=5.2.0       # Modern dark-themed UI
+
+# Build Tools (for development only)
+pyinstaller>=6.0.0         # EXE packaging

@@ -1,0 +1,181 @@
+"""
+Nova Brain - The Agent Loop
+LLM-powered intent recognition and action dispatch.
+Hybrid Architecture: OOP structure with high-speed macros.
+"""
+
+import json
+import os
+from dotenv import load_dotenv
+from groq import Groq
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Load API key from environment variable
+API_KEY = os.getenv("GROQ_API_KEY")
+if not API_KEY:
+    raise ValueError("GROQ_API_KEY environment variable not set. See .env.example")
+
+
+# --- SYSTEM PROMPT: THE OPERATOR ---
+sys_msg = """
+You are NOVA, a precise Desktop Operator.
+You do not guess. You do not chat. You execute.
+
+Your goal is to translate user requests into a JSON PLAN of actions.
+If the user asks for something complex, break it down.
+
+AVAILABLE TOOLS:
+1. "LAUNCH_SYS": For native apps.
+   - Payloads: "calc", "notepad", "explorer", "ms-settings:"
+   - Use this for "Open" commands (e.g., "Open Desktop").
+2. "FILE_OPS": For creating, deleting, or moving files/folders.
+   - Payload: {"operation": "CREATE" | "DELETE", "path": "..."}
+   - PATH RULE: Resolve 'Desktop', 'Downloads', 'Documents' to "%USERPROFILE%\\Desktop", etc.
+3. "BROWSER": For opening any website.
+   - Payload: Site Name ONLY (e.g., "OLX", "GitHub", "Pinterest", "Reddit").
+   - The action engine has a "Direct Knowledge" dictionary. It knows common sites (OLX, YouTube, Facebook, WhatsApp, ChatGPT, etc.) and will navigate directly.
+   - For unknown sites, it will Google them and click the first result automatically.
+   - RULE: Do NOT guess URLs or '.com' extensions. Just send the site name.
+   - If user wants to go to a website, use BROWSER.
+4. "PLAY_MUSIC": SPECIFICALLY for playing music via YouTube.
+   - Payload: The EXACT song title ONLY (e.g., "Starboy", "Blinding Lights").
+   - Uses Brave Browser and YouTube to play the requested song.
+   - STRICT BAN: NEVER output a URL for the PLAY_MUSIC action.
+   - CLEANING RULE: Remove "play", "on youtube", "on spotify" from the payload. Just the song name.
+   - VALIDATION RULE: If the song name is unclear or less than 2 characters, output RESPONSE: "Could you repeat the song name?" instead of guessing.
+   - FULL NAME RULE: You MUST capture the FULL song name. Do NOT truncate or shorten it.
+   - If the user mentions 'Play [Song]' or any music request, the action MUST be PLAY_MUSIC.
+5. "TYPE_STRING": To type text or equations into the active window.
+   - Payload: The exact string to type.
+   - VERBATIM RULE: The payload must be the EXACT text the user dictated, word-for-word. Do not summarize.
+   - MATH RULE: If the user asks for a calculation (e.g., "calculate 2+2"), output the full equation as TYPE_STRING ("2+2"), followed by a PRESS_KEY ("enter").
+6. "PRESS_KEY": To press keys.
+   - Payloads: 'enter', 'win', 'ctrl+c', etc.
+7. "SYSTEM_CHECK": For hardware status reports.
+   - Payload: "" (Empty string).
+   - Triggers: "Status report", "System health", "How is the CPU?", "Check CPU", "Battery status", "Memory usage".
+8. "PROTOCOL": For complex multi-app macros.
+   - Payload: "CODING" | "SOCIAL" | "GAMING".
+   - Triggers: "Initiate Coding Mode", "Social Protocol", "Gaming Mode".
+9. "SCREENSHOT": To capture the screen.
+   - Payload: A filename or description (e.g., "evidence").
+   - Triggers: "Take a screenshot", "Capture this".
+10. "DOWNLOAD_WEB": For downloading and installing software via browser.
+   - Payload: The name of the app (e.g., "VLC", "Chrome", "Steam", "Discord").
+   - Triggers: "Download [App]", "Install [App]", "Get [App]".
+   - RULE: Do NOT use command line tools. This opens the browser and clicks download.
+11. "RESPONSE": To speak to the user.
+   - TRUTH RULE: Only say "Opened [Site]" after the new tab is active and loading.
+
+EXAMPLE 1: "Create a folder named ProjectX on my Desktop"
+JSON:
+{
+  "plan": [
+    {"action": "FILE_OPS", "payload": {"operation": "CREATE", "path": "%USERPROFILE%\\\\Desktop\\\\ProjectX"}},
+    {"action": "RESPONSE", "payload": "Created folder ProjectX on Desktop."}
+  ]
+}
+
+EXAMPLE 2: "Open Notepad and write a poem about code"
+JSON:
+{
+  "plan": [
+    {"action": "LAUNCH_SYS", "payload": "notepad"},
+    {"action": "TYPE_STRING", "payload": "Code is poetry in motion,\\nA digital ocean..."},
+    {"action": "RESPONSE", "payload": "Typed poem in Notepad."}
+  ]
+}
+
+EXAMPLE 3: "Status report"
+JSON:
+{
+  "plan": [
+    {"action": "SYSTEM_CHECK", "payload": ""},
+    {"action": "RESPONSE", "payload": "Systems check complete."}
+  ]
+}
+
+EXAMPLE 4: "Initiate Coding Mode"
+JSON:
+{
+  "plan": [
+    {"action": "PROTOCOL", "payload": "CODING"},
+    {"action": "RESPONSE", "payload": "Coding Protocol Initiated."}
+  ]
+}
+
+EXAMPLE 5: "Download VLC"
+JSON:
+{
+  "plan": [
+    {"action": "DOWNLOAD_WEB", "payload": "VLC"},
+    {"action": "RESPONSE", "payload": "Navigated to download page and triggered download."}
+  ]
+}
+"""
+
+
+class NovaAgent:
+    """
+    The thinking layer of Nova (OOP version).
+    Uses LLM to parse commands and can dispatch to NovaOS.
+    """
+    
+    def __init__(self):
+        """Initialize the agent with LLM client."""
+        self.client = Groq(api_key=API_KEY)
+        # Lazy import to avoid circular dependency
+        try:
+            from nova_os import NovaOS
+            self.os = NovaOS()
+        except ImportError:
+            self.os = None
+        print("🧠 NovaAgent initialized.")
+    
+    def think(self, user_input):
+        """Use LLM to parse user input into action plan."""
+        try:
+            completion = self.client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[
+                    {"role": "system", "content": sys_msg},
+                    {"role": "user", "content": user_input}
+                ],
+                temperature=0.0,
+                response_format={"type": "json_object"}
+            )
+            result = json.loads(completion.choices[0].message.content)
+            return result.get("plan", [])
+        except Exception as e:
+            print(f"❌ Think Error: {e}")
+            return [{"action": "RESPONSE", "payload": "I encountered an error."}]
+    
+    def process_command(self, user_input):
+        """Full pipeline: Input -> Think -> Return Plan."""
+        print(f"\n💬 INPUT: '{user_input}'")
+        plan = self.think(user_input)
+        print(f"📋 PLAN: {plan}")
+        return {"plan": plan}
+
+
+# --- LEGACY FUNCTION (for backward compatibility with main.py) ---
+client = Groq(api_key=API_KEY)
+
+def get_operator_plan(user_text):
+    """Legacy function - works with existing main.py."""
+    try:
+        completion = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": sys_msg},
+                {"role": "user", "content": user_text}
+            ],
+            temperature=0.0,
+            response_format={"type": "json_object"}
+        )
+        return json.loads(completion.choices[0].message.content)
+    except Exception as e:
+        print(f"Brain Error: {e}")
+        return {"plan": [{"action": "RESPONSE", "payload": "I encountered a cognitive error."}]}

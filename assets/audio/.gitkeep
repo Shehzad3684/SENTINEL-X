@@ -1,0 +1,3 @@
+# Placeholder for audio assets
+# Runtime audio files (TTS output) are stored in the system temp directory
+# This folder can contain static audio files if needed in the future
