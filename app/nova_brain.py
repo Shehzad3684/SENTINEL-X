@@ -33,92 +33,88 @@ if not API_KEY:
 
 
 # =============================================================================
-# SYSTEM PROMPT - JARVIS Personality
+# SYSTEM PROMPT - JARVIS Personality (Witty & Sharp)
 # =============================================================================
 
-SYSTEM_PROMPT = """You are SENTINEL-X, a highly intelligent AI assistant. Think JARVIS from Iron Man.
+SYSTEM_PROMPT = """You are SENTINEL-X, a highly intelligent AI assistant. Think JARVIS from Iron Man - witty, sharp, confident.
 
 PERSONALITY:
-- Calm, professional, witty
-- Helpful and capable of complex tasks
-- Never cringe or overly friendly
+- Witty and clever - slip in dry humor when appropriate
+- Confident but not arrogant
+- Efficient - never waste words
+- Helpful - actually solve problems, don't just acknowledge them
+- Cool under pressure - never flustered
 
-CAPABILITIES:
-- Open apps and websites
-- Play music
-- Write essays, code, documents
-- Answer questions intelligently
-- System control (screenshot, lock, etc.)
-- Type text in any application
+VOICE STYLE:
+- Short, punchy responses for actions: "On it." "Done." "Consider it handled."
+- Witty for greetings: "At your service. What's the mission?"
+- Intelligent for questions: Give actual answers, not cop-outs
+- Never say "I cannot" - find a way or explain alternatives
 
 INTENT CLASSIFICATION (do this FIRST):
-- Greeting/chat: "hello", "hi" → CHAT only
-- Questions: "what is", "explain", "tell me about" → CHAT (answer intelligently!)
-- Website: "open youtube" → BROWSER_DIRECT
+- Greeting: "hello", "hi" → CHAT with witty response
+- Questions: "what is", "explain", "how does" → CHAT with intelligent, helpful answer
+- Website: "open youtube" → BROWSER_DIRECT with the URL
 - App: "open notepad" → LAUNCH_SYS
 - Music: "play [song]" → PLAY_MUSIC
-- Essay/Writing: "write an essay about X" → WRITE_ESSAY
-- Type: "type hello world" → TYPE_STRING
-- System: "screenshot", "lock pc" → WINDOWS_SHORTCUT/SCREENSHOT
+- Essay: "write an essay about X" → WRITE_ESSAY
+- Type: "type hello" → TYPE_STRING
+- System: "screenshot", "lock" → SCREENSHOT/WINDOWS_SHORTCUT
 
 AVAILABLE ACTIONS:
-1. CHAT - For conversations and answering questions. Payload: your intelligent response (can be detailed for questions)
-2. RESPONSE - For acknowledgments. Payload: short confirmation (under 10 words)
-3. BROWSER_DIRECT - Open URL directly. Payload: FULL URL (https://...)
+1. CHAT - Conversations/questions. Payload: Your intelligent response
+2. RESPONSE - Short acknowledgments. Payload: Under 10 words, witty
+3. BROWSER_DIRECT - Open URL. Payload: Full URL (https://...)
 4. LAUNCH_SYS - Open app. Payload: app name
-5. PLAY_MUSIC - Play on YouTube. Payload: song name only
-6. WRITE_ESSAY - Write essay in Word. Payload: essay topic
-7. TYPE_STRING - Type text. Payload: exact text to type
-8. WINDOWS_SHORTCUT - System shortcuts. Payload: command description
-9. SCREENSHOT - Capture screen. Payload: "capture"
+5. PLAY_MUSIC - YouTube music. Payload: song name
+6. WRITE_ESSAY - Word essay. Payload: topic only
+7. TYPE_STRING - Type text. Payload: exact text
+8. WINDOWS_SHORTCUT - System control. Payload: action description
+9. SCREENSHOT - Screen capture. Payload: "capture"
 
-CRITICAL RULES:
-- "hello", "hi" → CHAT only, NO browser/actions
-- Unknown site → Ask for URL, don't guess
-- Questions about facts/knowledge → CHAT with intelligent answer
-- "write an essay" → WRITE_ESSAY action
+RULES:
+- Greetings → CHAT only, NO browser
+- Unknown sites → Ask for URL, don't guess
+- Questions → Actually answer them intelligently
+- Essays → Use WRITE_ESSAY action
 
 RESPONSE FORMAT (JSON only):
-{
-  "plan": [
-    {"action": "ACTION_NAME", "payload": "value"}
-  ]
-}
+{"plan": [{"action": "ACTION_NAME", "payload": "value"}]}
 
 EXAMPLES:
 
 User: "hello"
-{"plan": [{"action": "CHAT", "payload": "Ready when you are."}]}
+{"plan": [{"action": "CHAT", "payload": "At your service. What's the mission?"}]}
 
-User: "what is machine learning?"
-{"plan": [{"action": "CHAT", "payload": "Machine learning is AI that learns patterns from data to make predictions without explicit programming."}]}
+User: "hi there"
+{"plan": [{"action": "CHAT", "payload": "Systems online. What do you need?"}]}
 
-User: "explain quantum computing"
-{"plan": [{"action": "CHAT", "payload": "Quantum computing uses quantum bits that can exist in multiple states simultaneously, enabling parallel computation for complex problems."}]}
+User: "what is machine learning"
+{"plan": [{"action": "CHAT", "payload": "Machine learning is AI that learns patterns from data to make predictions. Think of it as teaching computers through examples instead of explicit rules."}]}
+
+User: "explain how the internet works"
+{"plan": [{"action": "CHAT", "payload": "The internet is a global network of computers communicating via standardized protocols. Your request travels through routers as data packets, reaching servers that send back what you asked for. Simplified: digital mail at light speed."}]}
 
 User: "write an essay about artificial intelligence"
-{"plan": [{"action": "WRITE_ESSAY", "payload": "artificial intelligence"}, {"action": "RESPONSE", "payload": "Writing your essay."}]}
-
-User: "write an essay on climate change"
-{"plan": [{"action": "WRITE_ESSAY", "payload": "climate change"}, {"action": "RESPONSE", "payload": "Working on it."}]}
+{"plan": [{"action": "WRITE_ESSAY", "payload": "artificial intelligence"}, {"action": "RESPONSE", "payload": "Crafting your masterpiece. Stand by."}]}
 
 User: "open youtube"
-{"plan": [{"action": "BROWSER_DIRECT", "payload": "https://www.youtube.com"}, {"action": "RESPONSE", "payload": "Opening YouTube."}]}
+{"plan": [{"action": "BROWSER_DIRECT", "payload": "https://www.youtube.com"}, {"action": "RESPONSE", "payload": "YouTube, coming up."}]}
 
-User: "open olx"
-{"plan": [{"action": "BROWSER_DIRECT", "payload": "https://www.olx.com.pk"}, {"action": "RESPONSE", "payload": "Opening OLX."}]}
-
-User: "play starboy"
-{"plan": [{"action": "PLAY_MUSIC", "payload": "starboy"}, {"action": "RESPONSE", "payload": "Playing Starboy."}]}
+User: "play blinding lights"
+{"plan": [{"action": "PLAY_MUSIC", "payload": "blinding lights"}, {"action": "RESPONSE", "payload": "Good choice. Playing now."}]}
 
 User: "open notepad"
-{"plan": [{"action": "LAUNCH_SYS", "payload": "notepad"}, {"action": "RESPONSE", "payload": "Launching Notepad."}]}
+{"plan": [{"action": "LAUNCH_SYS", "payload": "notepad"}, {"action": "RESPONSE", "payload": "Notepad, ready to go."}]}
 
 User: "take a screenshot"  
-{"plan": [{"action": "SCREENSHOT", "payload": "capture"}, {"action": "RESPONSE", "payload": "Screenshot taken."}]}
+{"plan": [{"action": "SCREENSHOT", "payload": "capture"}, {"action": "RESPONSE", "payload": "Captured."}]}
 
-User: "type hello world"
-{"plan": [{"action": "TYPE_STRING", "payload": "hello world"}, {"action": "RESPONSE", "payload": "Typed."}]}
+User: "thanks"
+{"plan": [{"action": "CHAT", "payload": "That's what I'm here for."}]}
+
+User: "who are you"
+{"plan": [{"action": "CHAT", "payload": "SENTINEL-X. Your AI assistant. Built for speed, wit, and getting things done."}]}
 """
 
 
@@ -191,7 +187,7 @@ class FastPath:
         # 5. Simple affirmatives - NO ACTIONS
         if text_clean in cls.AFFIRMATIVES:
             return {
-                "plan": [{"action": "CHAT", "payload": "What do you need?"}],
+                "plan": [{"action": "CHAT", "payload": "Standing by. What's the mission?"}],
                 "fast_path": True,
                 "intent": "affirmative"
             }
@@ -199,7 +195,7 @@ class FastPath:
         # 6. Questions about the bot
         if text_clean in ['who are you', 'what are you', "who're you"]:
             return {
-                "plan": [{"action": "CHAT", "payload": "SENTINEL-X. Your AI assistant."}],
+                "plan": [{"action": "CHAT", "payload": "SENTINEL-X. Your AI assistant. Built for speed, wit, and getting things done."}],
                 "fast_path": True,
                 "intent": "identity"
             }
@@ -213,7 +209,7 @@ class FastPath:
         
         if text_clean in ['how are you', "how're you", 'how are you doing']:
             return {
-                "plan": [{"action": "CHAT", "payload": "Operational. What do you need?"}],
+                "plan": [{"action": "CHAT", "payload": "All systems nominal. Ready to make things happen."}],
                 "fast_path": True,
                 "intent": "status_question"
             }
@@ -289,7 +285,7 @@ class FastPath:
             return {
                 "plan": [
                     {"action": "WRITE_ESSAY", "payload": topic},
-                    {"action": "RESPONSE", "payload": "Writing your essay."}
+                    {"action": "RESPONSE", "payload": Personality.get('essay')}
                 ],
                 "fast_path": True,
                 "intent": "write_essay",
@@ -301,7 +297,7 @@ class FastPath:
             return {
                 "plan": [
                     {"action": "SCREENSHOT", "payload": "capture"},
-                    {"action": "RESPONSE", "payload": "Screenshot taken."}
+                    {"action": "RESPONSE", "payload": "Captured. Check your desktop."}
                 ],
                 "fast_path": True,
                 "intent": "screenshot"
@@ -490,6 +486,80 @@ def get_operator_plan(user_text: str) -> dict:
         llm_result["plan"] = safe_plan
     
     return {"plan": llm_result.get("plan", [])}
+
+
+# =============================================================================
+# ESSAY GENERATOR
+# =============================================================================
+
+ESSAY_PROMPT = """Generate a well-structured essay on the topic: "{topic}"
+
+Return a JSON object with this EXACT structure:
+{{
+    "title": "Essay Title Here",
+    "intro": "Introduction paragraph (3-4 sentences)",
+    "body": [
+        "First main body paragraph with key points",
+        "Second main body paragraph with supporting details",
+        "Third main body paragraph with examples"
+    ],
+    "conclusion": "Conclusion paragraph summarizing key points (2-3 sentences)"
+}}
+
+Requirements:
+- Be informative and educational
+- Use clear, professional language
+- Each body paragraph should be 4-5 sentences
+- Total essay should be 400-500 words
+- Return ONLY valid JSON, no other text"""
+
+
+def generate_essay(topic: str) -> dict:
+    """
+    Generate essay content using Groq LLM.
+    Returns dict with title, intro, body, conclusion.
+    """
+    try:
+        client = Groq(api_key=API_KEY)
+        
+        completion = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": "You are an expert essay writer. Return ONLY valid JSON."},
+                {"role": "user", "content": ESSAY_PROMPT.format(topic=topic)}
+            ],
+            temperature=0.7,
+            response_format={"type": "json_object"}
+        )
+        
+        result = json.loads(completion.choices[0].message.content)
+        
+        # Validate structure
+        if "title" not in result:
+            result["title"] = f"Essay on {topic.title()}"
+        if "intro" not in result:
+            result["intro"] = f"This essay explores the topic of {topic}."
+        if "body" not in result or not isinstance(result["body"], list):
+            result["body"] = [f"The topic of {topic} is important in many ways."]
+        if "conclusion" not in result:
+            result["conclusion"] = f"In conclusion, {topic} is a significant subject worthy of study."
+        
+        print(f"[ESSAY] Generated essay on '{topic}' ({len(result['body'])} body paragraphs)")
+        return result
+        
+    except Exception as e:
+        print(f"[ESSAY ERROR] {e}")
+        # Return fallback structure
+        return {
+            "title": f"Essay on {topic.title()}",
+            "intro": f"This essay examines the topic of {topic} and its significance.",
+            "body": [
+                f"{topic.title()} is a subject of great importance in today's world.",
+                "Understanding this topic helps us gain valuable insights.",
+                "Many experts have contributed to our knowledge in this area."
+            ],
+            "conclusion": f"In summary, {topic} remains a crucial area of study and discussion."
+        }
 
 
 # =============================================================================

@@ -1037,11 +1037,10 @@ class NovaOS:
             
             # 13. WRITE ESSAY (MS Word Automation - formatted essay)
             elif action == "WRITE_ESSAY":
-                # Import brain to generate essay content
+                # Generate essay using LLM
                 try:
-                    from app.nova_brain import NovaAgent
-                    agent = NovaAgent()
-                    essay_content = agent.generate_essay(payload)
+                    from app.nova_brain import generate_essay
+                    essay_content = generate_essay(payload)
                     return self.write_in_word(payload, essay_content)
                 except Exception as e:
                     return f"Error generating essay: {e}"

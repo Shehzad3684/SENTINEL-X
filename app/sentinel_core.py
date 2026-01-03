@@ -311,69 +311,80 @@ class SessionContext:
 # =============================================================================
 
 class Personality:
-    """JARVIS-like response generator - calm, witty, sharp"""
+    """JARVIS-like response generator - witty, sharp, confident"""
     
-    # Acknowledgments - short and professional
+    # Acknowledgments - witty and professional
     ACK_DONE = [
-        "Done.",
-        "That's handled.",
-        "Taken care of.",
-        "On it.",
-        "Completed.",
+        "Done. Anything else?",
+        "Handled. Next?",
+        "Consider it done.",
+        "That's sorted.",
+        "Executed flawlessly.",
+        "Mission accomplished.",
     ]
     
     ACK_ALREADY = [
-        "Already open.",
-        "That's already running.",
-        "Still there. Want me to refresh?",
-        "Already done. I don't forget that fast.",
-        "It's open. Need me to bring it forward?",
+        "Already on it. I'm fast, not forgetful.",
+        "That's been running. Keep up.",
+        "Already open. Want something new?",
+        "Still there from 5 seconds ago.",
+        "I don't forget that quickly.",
     ]
     
     ACK_BLOCKED = [
-        "Hold on. You just asked for that.",
-        "I heard you the first time.",
-        "Still on cooldown. Give it a moment.",
-        "That's a duplicate. Skipping.",
+        "Easy there. You just asked for that.",
+        "Heard you the first time.",
+        "Cooldown active. Patience.",
+        "Duplicate request. I'm efficient, not repetitive.",
     ]
     
     GREETINGS = [
-        "Ready when you are.",
-        "Standing by.",
-        "At your service.",
-        "Online and listening.",
-        "What do you need?",
+        "At your service. What's the mission?",
+        "Systems online. What do you need?",
+        "Ready for action.",
+        "Standing by. Hit me.",
+        "All systems go. What's up?",
+        "Listening. Make it interesting.",
     ]
     
     GOODBYES = [
-        "Standing down.",
-        "Going quiet.",
-        "Call if you need me.",
-        "Offline.",
+        "Going dark. Call when you need me.",
+        "Signing off. Don't have too much fun without me.",
+        "Standing down. I'll be here.",
+        "Later. Try not to break anything.",
     ]
     
     THANKS_RESPONSES = [
-        "Anytime.",
         "That's what I'm here for.",
-        "Copy that.",
-        "No problem.",
+        "Anytime. It's literally my job.",
+        "No sweat.",
+        "You're welcome. Obviously.",
+        "I know, I'm amazing.",
     ]
     
     UNKNOWN_SITE = [
-        "Don't recognize that site. Can you spell it out?",
-        "Not in my records. What's the exact URL?",
-        "Unknown domain. Full address please?",
+        "Don't know that one. Got a URL?",
+        "That's not in my database. Spell it out?",
+        "Unknown territory. Give me the full address.",
     ]
     
     ERROR_RESPONSES = [
-        "That didn't work. {reason}",
-        "Hit a snag. {reason}",
-        "Error: {reason}",
+        "Well, that didn't work. {reason}",
+        "Houston, we have a problem. {reason}",
+        "Slight hiccup: {reason}",
+    ]
+    
+    ESSAY_RESPONSES = [
+        "Writing your masterpiece. One moment.",
+        "Crafting literary gold. Stand by.",
+        "Generating brilliance. This'll be good.",
+        "On it. Prepare to be impressed.",
     ]
     
     CAPABILITIES = (
-        "Open apps, websites, play music, type text, "
-        "screenshots, system control. What do you need?"
+        "I can open apps, browse the web, write essays, play music, "
+        "take screenshots, answer questions, and control your system. "
+        "What's the challenge?"
     )
     
     @classmethod
@@ -390,6 +401,7 @@ class Personality:
             "thanks": cls.THANKS_RESPONSES,
             "unknown_site": cls.UNKNOWN_SITE,
             "error": cls.ERROR_RESPONSES,
+            "essay": cls.ESSAY_RESPONSES,
             "capabilities": [cls.CAPABILITIES],
         }
         
