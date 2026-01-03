@@ -1,11 +1,12 @@
 """
 Nova Brain - The Agent Loop
 LLM-powered intent recognition and action dispatch.
-Hybrid Architecture: OOP structure with high-speed macros.
+LIGHTNING MODE: Local fast-path for common commands.
 """
 
 import json
 import os
+import re
 from dotenv import load_dotenv
 from groq import Groq
 
@@ -17,6 +18,62 @@ API_KEY = os.getenv("GROQ_API_KEY")
 if not API_KEY:
     raise ValueError("GROQ_API_KEY environment variable not set. See .env.example")
 
+
+# =============================================================================
+# LIGHTNING FAST-PATH: Local command parser (NO LLM, instant)
+# =============================================================================
+
+QUICK_SITES = {
+    "youtube": "youtube", "google": "google", "facebook": "facebook",
+    "twitter": "twitter", "x": "twitter", "instagram": "instagram",
+    "reddit": "reddit", "github": "github", "linkedin": "linkedin",
+    "amazon": "amazon", "netflix": "netflix", "spotify": "spotify",
+    "twitch": "twitch", "discord": "discord", "chatgpt": "chatgpt",
+    "gmail": "gmail", "wikipedia": "wikipedia",
+}
+
+QUICK_APPS = {
+    "notepad": "notepad", "calculator": "calc", "calc": "calc",
+    "explorer": "explorer", "file explorer": "explorer", "files": "explorer",
+    "settings": "ms-settings:", "chrome": "chrome", "brave": "brave",
+    "word": "winword", "excel": "excel", "vscode": "code", "vs code": "code",
+    "terminal": "wt", "cmd": "cmd", "task manager": "taskmgr",
+}
+
+def fast_parse(user_text):
+    """INSTANT command parser - bypasses LLM."""
+    text = user_text.lower().strip()
+    
+    if text in ["hello", "hi", "hey"]:
+        return {"plan": [{"action": "RESPONSE", "payload": "Ready."}]}
+    if "thank" in text:
+        return {"plan": [{"action": "RESPONSE", "payload": "Copy that."}]}
+    
+    # "Open [target]"
+    open_match = re.match(r'^(?:open|go to|launch|start|visit)\s+(.+)$', text)
+    if open_match:
+        target = open_match.group(1).strip()
+        for site_name, site_key in QUICK_SITES.items():
+            if site_name in target:
+                return {"plan": [{"action": "BROWSER", "payload": site_key}, {"action": "RESPONSE", "payload": f"Opening {site_key}."}]}
+        for app_name, app_cmd in QUICK_APPS.items():
+            if app_name in target:
+                return {"plan": [{"action": "LAUNCH_SYS", "payload": app_cmd}, {"action": "RESPONSE", "payload": "Launching."}]}
+    
+    # "Play [song]"
+    play_match = re.match(r'^play\s+(.+?)(?:\s+on\s+youtube)?$', text)
+    if play_match:
+        song = play_match.group(1).strip()
+        if len(song) > 2:
+            return {"plan": [{"action": "PLAY_MUSIC", "payload": song}, {"action": "RESPONSE", "payload": f"Playing {song}."}]}
+    
+    if any(p in text for p in ["minimize all", "show desktop"]):
+        return {"plan": [{"action": "MINIMIZE_ALL", "payload": ""}, {"action": "RESPONSE", "payload": "Done."}]}
+    
+    if "screenshot" in text:
+        return {"plan": [{"action": "SCREENSHOT", "payload": "capture"}, {"action": "RESPONSE", "payload": "Captured."}]}
+    
+    return None
 
 # --- SYSTEM PROMPT: THE OPERATOR ---
 sys_msg = """
@@ -164,7 +221,15 @@ class NovaAgent:
 client = Groq(api_key=API_KEY)
 
 def get_operator_plan(user_text):
-    """Legacy function - works with existing main.py."""
+    """LIGHTNING-FAST: Try local parser first, LLM only for complex."""
+    # FAST PATH (~0ms)
+    fast_result = fast_parse(user_text)
+    if fast_result:
+        print(f"[FAST] {user_text}")
+        return fast_result
+    
+    # SLOW PATH - LLM
+    print(f"[LLM] {user_text}")
     try:
         completion = client.chat.completions.create(
             model="llama-3.1-8b-instant",
@@ -178,4 +243,4 @@ def get_operator_plan(user_text):
         return json.loads(completion.choices[0].message.content)
     except Exception as e:
         print(f"Brain Error: {e}")
-        return {"plan": [{"action": "RESPONSE", "payload": "I encountered a cognitive error."}]}
+        return {"plan": [{"action": "RESPONSE", "payload": "Error."}]}

@@ -2,10 +2,12 @@
 Nova Brain - The Agent Loop
 LLM-powered intent recognition and action dispatch.
 Hybrid Architecture: OOP structure with high-speed macros.
+LIGHTNING MODE: Local fast-path for common commands.
 """
 
 import json
 import os
+import re
 from dotenv import load_dotenv
 from groq import Groq
 
@@ -16,6 +18,195 @@ load_dotenv()
 API_KEY = os.getenv("GROQ_API_KEY")
 if not API_KEY:
     raise ValueError("GROQ_API_KEY environment variable not set. See .env.example")
+
+
+# =============================================================================
+# LIGHTNING FAST-PATH: Local command parser (NO LLM, instant execution)
+# =============================================================================
+
+# Common websites - instant recognition
+QUICK_SITES = {
+    "youtube": "youtube",
+    "google": "google", 
+    "facebook": "facebook",
+    "twitter": "twitter",
+    "x": "twitter",
+    "instagram": "instagram",
+    "whatsapp web": "whatsapp",
+    "reddit": "reddit",
+    "github": "github",
+    "linkedin": "linkedin",
+    "amazon": "amazon",
+    "netflix": "netflix",
+    "spotify": "spotify",
+    "twitch": "twitch",
+    "discord": "discord",
+    "pinterest": "pinterest",
+    "tiktok": "tiktok",
+    "chatgpt": "chatgpt",
+    "gmail": "gmail",
+    "outlook": "outlook",
+    "wikipedia": "wikipedia",
+    "stackoverflow": "stackoverflow",
+    "stack overflow": "stackoverflow",
+}
+
+# Common apps - instant recognition  
+QUICK_APPS = {
+    "notepad": "notepad",
+    "calculator": "calc",
+    "calc": "calc",
+    "explorer": "explorer",
+    "file explorer": "explorer",
+    "files": "explorer",
+    "settings": "ms-settings:",
+    "chrome": "chrome",
+    "brave": "brave",
+    "firefox": "firefox",
+    "edge": "msedge",
+    "word": "winword",
+    "excel": "excel",
+    "powerpoint": "powerpnt",
+    "outlook": "outlook",
+    "teams": "teams",
+    "zoom": "zoom",
+    "slack": "slack",
+    "vscode": "code",
+    "vs code": "code",
+    "visual studio code": "code",
+    "terminal": "wt",
+    "cmd": "cmd",
+    "command prompt": "cmd",
+    "powershell": "powershell",
+    "paint": "mspaint",
+    "snipping tool": "snippingtool",
+    "task manager": "taskmgr",
+    "control panel": "control",
+}
+
+# Quick responses for common questions
+QUICK_RESPONSES = {
+    "how are you": "Operational. Ready for commands.",
+    "what can you do": "Open apps. Browse web. Play music. Type text. System control.",
+    "who are you": "FOX-3. Your tactical AI assistant.",
+    "hello": "Ready.",
+    "hi": "Ready.",
+    "hey": "Listening.",
+    "thank you": "Copy that.",
+    "thanks": "Copy that.",
+    "good morning": "Good morning. Standing by.",
+    "good night": "Goodnight. Shutting down awareness.",
+    "bye": "Standing down.",
+    "goodbye": "Standing down.",
+}
+
+
+def fast_parse(user_text):
+    """
+    INSTANT command parser - bypasses LLM for common commands.
+    Returns a plan dict if matched, None if LLM needed.
+    """
+    text = user_text.lower().strip()
+    
+    # Quick greetings/responses (instant)
+    for trigger, response in QUICK_RESPONSES.items():
+        if text == trigger or text.startswith(trigger + " "):
+            return {"plan": [{"action": "RESPONSE", "payload": response}]}
+    
+    # "Open [website]" pattern
+    open_match = re.match(r'^(?:open|go to|launch|start|visit)\s+(.+)$', text)
+    if open_match:
+        target = open_match.group(1).strip()
+        
+        # Check if it's a known website
+        for site_name, site_key in QUICK_SITES.items():
+            if site_name in target:
+                return {
+                    "plan": [
+                        {"action": "BROWSER", "payload": site_key},
+                        {"action": "RESPONSE", "payload": f"Opening {site_key}."}
+                    ]
+                }
+        
+        # Check if it's a known app
+        for app_name, app_cmd in QUICK_APPS.items():
+            if app_name in target:
+                return {
+                    "plan": [
+                        {"action": "LAUNCH_SYS", "payload": app_cmd},
+                        {"action": "RESPONSE", "payload": f"Launching {app_name}."}
+                    ]
+                }
+        
+        # Unknown target - might be a website, let BROWSER handle it
+        if any(word in target for word in ["website", "site", ".com", ".org", ".net"]):
+            return {
+                "plan": [
+                    {"action": "BROWSER", "payload": target},
+                    {"action": "RESPONSE", "payload": f"Opening {target}."}
+                ]
+            }
+    
+    # "Play [song]" pattern
+    play_match = re.match(r'^play\s+(.+?)(?:\s+on\s+youtube|\s+on\s+spotify)?$', text)
+    if play_match:
+        song = play_match.group(1).strip()
+        if len(song) > 2:
+            return {
+                "plan": [
+                    {"action": "PLAY_MUSIC", "payload": song},
+                    {"action": "RESPONSE", "payload": f"Playing {song}."}
+                ]
+            }
+    
+    # "Search [query]" pattern
+    search_match = re.match(r'^(?:search|google|look up|find)\s+(.+)$', text)
+    if search_match:
+        query = search_match.group(1).strip()
+        return {
+            "plan": [
+                {"action": "BROWSER", "payload": f"google search {query}"},
+                {"action": "RESPONSE", "payload": f"Searching for {query}."}
+            ]
+        }
+    
+    # Minimize all / show desktop
+    if any(phrase in text for phrase in ["minimize all", "show desktop", "clear screen", "hide everything"]):
+        return {
+            "plan": [
+                {"action": "MINIMIZE_ALL", "payload": ""},
+                {"action": "RESPONSE", "payload": "Desktop cleared."}
+            ]
+        }
+    
+    # Screenshot
+    if any(phrase in text for phrase in ["screenshot", "screen shot", "capture screen", "take a picture"]):
+        return {
+            "plan": [
+                {"action": "SCREENSHOT", "payload": "capture"},
+                {"action": "RESPONSE", "payload": "Screenshot taken."}
+            ]
+        }
+    
+    # System status
+    if any(phrase in text for phrase in ["status", "system check", "cpu", "battery", "memory", "ram"]):
+        return {
+            "plan": [
+                {"action": "SYSTEM_CHECK", "payload": ""},
+            ]
+        }
+    
+    # Lock PC
+    if any(phrase in text for phrase in ["lock pc", "lock computer", "lock screen", "lock my"]):
+        return {
+            "plan": [
+                {"action": "WINDOWS_SHORTCUT", "payload": "lock pc"},
+                {"action": "RESPONSE", "payload": "Locking."}
+            ]
+        }
+    
+    # No fast-path match - need LLM
+    return None
 
 
 # --- SYSTEM PROMPT: THE OPERATOR ---
@@ -520,7 +711,19 @@ IMPORTANT: Only 3 keys. Only 3 paragraphs. Nothing else."""
 client = Groq(api_key=API_KEY)
 
 def get_operator_plan(user_text):
-    """Legacy function - works with existing main.py."""
+    """
+    LIGHTNING-FAST command processing.
+    1. Try fast-path local parser first (instant, no network)
+    2. Fall back to LLM only for complex commands
+    """
+    # FAST PATH: Try local parser first (~0ms)
+    fast_result = fast_parse(user_text)
+    if fast_result:
+        print(f"[FAST] Instant match: {user_text}")
+        return fast_result
+    
+    # SLOW PATH: LLM for complex commands (~1-3s)
+    print(f"[LLM] Processing: {user_text}")
     try:
         completion = client.chat.completions.create(
             model="llama-3.1-8b-instant",
