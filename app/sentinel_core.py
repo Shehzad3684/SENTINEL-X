@@ -494,20 +494,28 @@ class IntentClassifier:
         if any(kw in text_lower for kw in browser_keywords):
             return Intent.BROWSER_CONTROL, text_lower
         
-        # 9. TYPE TEXT
-        if text_lower.startswith(('type ', 'write ', 'enter ')):
-            content = re.sub(r'^(type|write|enter)\s+', '', text_lower)
+        # 9. ESSAY/DOCUMENT WRITING - Must come BEFORE TYPE_TEXT
+        essay_patterns = ['write an essay', 'write essay', 'compose an essay',
+                         'write a document', 'write a letter', 'write a report']
+        if any(pattern in text_lower for pattern in essay_patterns):
+            # Extract topic
+            topic = re.sub(r'^(write|compose|create)\s+(an?\s+)?(essay|document|letter|report)\s+(about|on|regarding)?\s*', '', text_lower)
+            return Intent.MULTI_STEP, topic.strip() if topic.strip() else text_lower
+        
+        # 10. TYPE TEXT (simple text entry, NOT essay writing)
+        if text_lower.startswith('type '):
+            content = text_lower[5:]  # Remove "type "
             return Intent.TYPE_TEXT, content
         
-        # 10. FILE OPERATION
+        # 11. FILE OPERATION
         if any(kw in text_lower for kw in ['create folder', 'delete file', 'new folder', 'remove']):
             return Intent.FILE_OPERATION, text_lower
         
-        # 11. MULTI-STEP (contains "and")
+        # 12. MULTI-STEP (contains "and")
         if ' and ' in text_lower and any(kw in text_lower for kw in ['open', 'then', 'after']):
             return Intent.MULTI_STEP, text_lower
         
-        # Default: Unknown - ask for clarification
+        # Default: Unknown - pass to LLM for intelligent handling
         return Intent.UNKNOWN, text_lower
 
 
@@ -584,6 +592,16 @@ class SentinelCore:
         if intent == Intent.TYPE_TEXT:
             return self._handle_type_text(target)
         
+        if intent == Intent.MULTI_STEP:
+            # Essay writing and complex tasks - pass to LLM
+            return {
+                "intent": Intent.MULTI_STEP,
+                "plan": [],  # Empty = LLM handles
+                "response": None,
+                "blocked": False,
+                "reason": "complex_task"
+            }
+        
         if intent == Intent.UNKNOWN:
             return self._handle_unknown(user_input)
         
@@ -608,40 +626,89 @@ class SentinelCore:
         }
     
     def _handle_conversation(self, user_input: str, target: str) -> dict:
-        """Handle conversational input - NO ACTIONS"""
+        """Handle conversational input - simple greetings locally, questions to LLM"""
         self.context.conversation_count += 1
         
-        text_lower = target or user_input.lower()
+        text_lower = (target or user_input).lower().strip()
         
-        # Determine response type
-        if any(g in text_lower for g in ['hello', 'hi', 'hey', 'yo']):
-            response = Personality.get("greeting")
-        elif any(g in text_lower for g in ['bye', 'goodbye', 'see ya']):
-            response = Personality.get("goodbye")
-        elif any(g in text_lower for g in ['thank', 'thanks']):
-            response = Personality.get("thanks")
-        elif 'what can you do' in text_lower or 'capabilities' in text_lower:
-            response = Personality.get("capabilities")
-        elif 'who are you' in text_lower or 'what are you' in text_lower:
-            response = "SENTINEL-X. Your AI assistant. Built for speed and precision."
-        elif 'how are you' in text_lower:
-            response = "Operational. Systems nominal."
-        else:
-            # Generic conversational response via CHAT
+        # SIMPLE GREETINGS - handle locally
+        if text_lower in ['hello', 'hi', 'hey', 'yo', 'sup', 'howdy']:
             return {
                 "intent": Intent.CONVERSATIONAL,
-                "plan": [{"action": "CHAT", "payload": user_input}],
-                "response": None,  # Let LLM handle
+                "plan": [{"action": "RESPONSE", "payload": Personality.get("greeting")}],
+                "response": Personality.get("greeting"),
                 "blocked": False,
                 "reason": ""
             }
         
+        # Greetings with extras (hi there, hello friend)
+        if re.match(r'^(hello|hi|hey|yo)\b', text_lower) and len(text_lower.split()) <= 3:
+            return {
+                "intent": Intent.CONVERSATIONAL,
+                "plan": [{"action": "RESPONSE", "payload": Personality.get("greeting")}],
+                "response": Personality.get("greeting"),
+                "blocked": False,
+                "reason": ""
+            }
+        
+        # GOODBYES - handle locally
+        if any(g in text_lower for g in ['bye', 'goodbye', 'see ya', 'later']):
+            return {
+                "intent": Intent.CONVERSATIONAL,
+                "plan": [{"action": "RESPONSE", "payload": Personality.get("goodbye")}],
+                "response": Personality.get("goodbye"),
+                "blocked": False,
+                "reason": ""
+            }
+        
+        # THANKS - handle locally
+        if any(g in text_lower for g in ['thank', 'thanks', 'thx']):
+            return {
+                "intent": Intent.CONVERSATIONAL,
+                "plan": [{"action": "RESPONSE", "payload": Personality.get("thanks")}],
+                "response": Personality.get("thanks"),
+                "blocked": False,
+                "reason": ""
+            }
+        
+        # Simple bot questions - handle locally
+        if text_lower in ['what can you do', 'what are your capabilities', 'help']:
+            return {
+                "intent": Intent.CONVERSATIONAL,
+                "plan": [{"action": "RESPONSE", "payload": Personality.get("capabilities")}],
+                "response": Personality.get("capabilities"),
+                "blocked": False,
+                "reason": ""
+            }
+        
+        if text_lower in ['who are you', 'what are you']:
+            response = "SENTINEL-X. Your AI assistant. Built for speed and precision."
+            return {
+                "intent": Intent.CONVERSATIONAL,
+                "plan": [{"action": "RESPONSE", "payload": response}],
+                "response": response,
+                "blocked": False,
+                "reason": ""
+            }
+        
+        if text_lower in ['how are you', "how're you"]:
+            response = "Operational. Systems nominal."
+            return {
+                "intent": Intent.CONVERSATIONAL,
+                "plan": [{"action": "RESPONSE", "payload": response}],
+                "response": response,
+                "blocked": False,
+                "reason": ""
+            }
+        
+        # EVERYTHING ELSE (questions, complex chat) → LLM
+        # Return empty plan to signal LLM should handle
         return {
             "intent": Intent.CONVERSATIONAL,
-            "plan": [{"action": "RESPONSE", "payload": response}],
-            "response": response,
+            "plan": [],  # Empty = needs LLM
+            "response": None,
             "blocked": False,
-            "reason": ""
+            "reason": "needs_llm"
         }
     
     def _handle_open_website(self, target: str) -> dict:
@@ -855,13 +922,14 @@ class SentinelCore:
         }
     
     def _handle_unknown(self, user_input: str) -> dict:
-        """Handle unknown input - ask for clarification"""
+        """Handle unknown input - PASS TO LLM for intelligent processing"""
+        # DON'T block - let LLM handle complex/creative requests
         return {
             "intent": Intent.UNKNOWN,
-            "plan": [],
-            "response": "Not sure what you mean. Can you be more specific?",
-            "blocked": True,
-            "reason": "unclear_intent"
+            "plan": [],  # Empty plan signals LLM should handle
+            "response": None,
+            "blocked": False,  # IMPORTANT: Don't block, let LLM process
+            "reason": "needs_llm"
         }
     
     def confirm_risky_action(self, action: str) -> dict:

@@ -576,6 +576,12 @@ class LogPanel(tk.Frame):
         self.after(1000, self._update_time)
     
     def log(self, message, tag="info"):
+        # Safety check - don't log if widget destroyed
+        try:
+            if not self.winfo_exists():
+                return
+        except:
+            return
         self.text.configure(state="normal")
         
         timestamp = datetime.now().strftime("%H:%M:%S")
@@ -895,6 +901,9 @@ class SentinelXApp:
         self.root.mainloop()
     
     def cleanup(self):
+        # Disable logging before cleanup to prevent Tkinter errors
+        self.bot.log_callback = lambda m: None
+        self.bot.status_callback = lambda s: None
         self.orb.stop()
         if self.bot.is_running():
             self.bot.stop()

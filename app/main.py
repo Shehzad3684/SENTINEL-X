@@ -106,7 +106,7 @@ def get_instant_tts():
     """Get or create the global instant TTS engine."""
     global _instant_tts
     if _instant_tts is None:
-        _instant_tts = InstantTTS(rate=4)
+        _instant_tts = InstantTTS(rate=1)  # Slower for clarity (was 4)
     return _instant_tts
 
 
@@ -190,8 +190,8 @@ class NovaBotEngine:
         try:
             audio_file = get_runtime_audio_file("response.mp3")
             
-            # Fast voice with 50% speed boost
-            comm = edge_tts.Communicate(text, "en-GB-RyanNeural", rate="+50%")
+            # Clear voice at natural speed
+            comm = edge_tts.Communicate(text, "en-GB-RyanNeural", rate="+10%")
             
             # Stream directly to file
             with open(audio_file, "wb") as f:
@@ -411,7 +411,7 @@ async def speak(text):
     try:
         audio_file = get_runtime_audio_file("response.mp3")
         
-        comm = edge_tts.Communicate(text, "en-GB-RyanNeural", rate="+50%")
+        comm = edge_tts.Communicate(text, "en-GB-RyanNeural", rate="+10%")
         
         with open(audio_file, "wb") as f:
             async for chunk in comm.stream():
