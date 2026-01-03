@@ -27,31 +27,145 @@ def force_foreground(app_name):
     return False
 
 # --- KNOWN SITES DICTIONARY ---
-KNOWN_SITES = {
-    "olx": "olx.com.pk",
-    "youtube": "youtube.com",
-    "facebook": "facebook.com",
-    "whatsapp": "web.whatsapp.com",
-    "chatgpt": "chatgpt.com",
-    "github": "github.com",
-    "gmail": "mail.google.com",
-    "google": "google.com",
-    "twitter": "twitter.com",
-    "x": "x.com",
-    "reddit": "reddit.com",
-    "linkedin": "linkedin.com",
-    "instagram": "instagram.com",
-    "amazon": "amazon.com",
-    "netflix": "netflix.com",
-    "spotify": "open.spotify.com",
-    "stackoverflow": "stackoverflow.com",
-    "stack overflow": "stackoverflow.com",
-    "wikipedia": "wikipedia.org",
-    "pinterest": "pinterest.com",
-    "tiktok": "tiktok.com",
-    "twitch": "twitch.tv",
-    "discord": "discord.com",
+ADDITIONAL_SITES = {
+    # --- Productivity & Tools ---
+    "zoom": "zoom.us",
+    "slack": "slack.com",
+    "trello": "trello.com",
+    "notion": "notion.so",
+    "asana": "asana.com",
+    "canva": "canva.com",
+    "figma": "figma.com",
+    "dropbox": "dropbox.com",
+    "wetransfer": "wetransfer.com",
+    "evernote": "evernote.com",
+    "miro": "miro.com",
+    "clickup": "clickup.com",
+    "jira": "atlassian.com/software/jira",
+    "office": "office.com",
+    "outlook": "outlook.live.com",
+    "onedrive": "onedrive.live.com",
+    "teams": "teams.microsoft.com",
+    "speedtest": "speedtest.net",
+    "translate": "translate.google.com",
+    "grammarly": "grammarly.com",
+    "quillbot": "quillbot.com",
+    "calendar": "calendar.google.com",
+    "photos": "photos.google.com",
+    "drive": "drive.google.com",
+    "docs": "docs.google.com",
+    "sheets": "docs.google.com/spreadsheets",
+    "slides": "docs.google.com/presentation",
+
+    # --- Development & Tech ---
+    "gitlab": "gitlab.com",
+    "bitbucket": "bitbucket.org",
+    "leetcode": "leetcode.com",
+    "hackerrank": "hackerrank.com",
+    "geeksforgeeks": "geeksforgeeks.org",
+    "w3schools": "w3schools.com",
+    "kaggle": "kaggle.com",
+    "huggingface": "huggingface.co",
+    "replit": "replit.com",
+    "codepen": "codepen.io",
+    "vercel": "vercel.com",
+    "netlify": "netlify.com",
+    "digitalocean": "digitalocean.com",
+    "aws": "aws.amazon.com",
+    "azure": "azure.microsoft.com",
+    "docker": "hub.docker.com",
+    "pypi": "pypi.org",
+    "npm": "npmjs.com",
+    "devto": "dev.to",
+    "medium": "medium.com",
+
+    # --- News & Information ---
+    "bbc": "bbc.com",
+    "cnn": "cnn.com",
+    "nytimes": "nytimes.com",
+    "theguardian": "theguardian.com",
+    "forbes": "forbes.com",
+    "bloomberg": "bloomberg.com",
+    "businessinsider": "businessinsider.com",
+    "techcrunch": "techcrunch.com",
+    "theverge": "theverge.com",
+    "wired": "wired.com",
+    "engadget": "engadget.com",
+    "cnet": "cnet.com",
+    "gsmarena": "gsmarena.com",
+    "dawn": "dawn.com",  # Popular in PK
+    "geo": "geo.tv",    # Popular in PK
+    "weather": "weather.com",
+    "wolframalpha": "wolframalpha.com",
+
+    # --- Entertainment & Streaming ---
+    "hulu": "hulu.com",
+    "disneyplus": "disneyplus.com",
+    "hbo": "max.com",
+    "vimeo": "vimeo.com",
+    "dailymotion": "dailymotion.com",
+    "soundcloud": "soundcloud.com",
+    "bandcamp": "bandcamp.com",
+    "imdb": "imdb.com",
+    "rottentomatoes": "rottentomatoes.com",
+    "9gag": "9gag.com",
+    "buzzfeed": "buzzfeed.com",
+
+    # --- Education ---
+    "coursera": "coursera.org",
+    "udemy": "udemy.com",
+    "edx": "edx.org",
+    "khanacademy": "khanacademy.org",
+    "quizlet": "quizlet.com",
+    "duolingo": "duolingo.com",
+    "chegg": "chegg.com",
+    "scribd": "scribd.com",
+    "researchgate": "researchgate.net",
+    "academia": "academia.edu",
+
+    # --- Shopping & E-Commerce ---
+    "ebay": "ebay.com",
+    "aliexpress": "aliexpress.com",
+    "alibaba": "alibaba.com",
+    "daraz": "daraz.pk", # Popular in PK
+    "etsy": "etsy.com",
+    "walmart": "walmart.com",
+    "bestbuy": "bestbuy.com",
+    "ikea": "ikea.com",
+    "shopify": "shopify.com",
+
+    # --- Finance & Crypto ---
+    "paypal": "paypal.com",
+    "binance": "binance.com",
+    "coinbase": "coinbase.com",
+    "tradingview": "tradingview.com",
+    "wise": "wise.com",
+    "payoneer": "payoneer.com",
+    "stripe": "stripe.com",
+
+    # --- Social & Messaging ---
+    "telegram": "web.telegram.org",
+    "snapchat": "snapchat.com",
+    "tumblr": "tumblr.com",
+    "quora": "quora.com",
+    "wechat": "wechat.com",
+    "skype": "web.skype.com",
+    "messenger": "messenger.com",
+
+    # --- Travel & Lifestyle ---
+    "airbnb": "airbnb.com",
+    "booking": "booking.com",
+    "tripadvisor": "tripadvisor.com",
+    "uber": "uber.com",
+    "foodpanda": "foodpanda.pk", # Popular in PK
+
+    # --- AI ---
+    "claude": "claude.ai",
+    "gemini": "gemini.google.com",
+    "midjourney": "midjourney.com",
 }
+
+
 
 # --- UNIVERSAL APP LAUNCHER ---
 def launch_app(app_name, wait_time=2.0):

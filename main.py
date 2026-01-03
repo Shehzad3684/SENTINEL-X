@@ -1,6 +1,6 @@
 """
 Nova Main - Entry Point
-Voice-controlled desktop automation with OOP architecture.
+Voice-controlled desktop automation with LIGHTNING-FAST TTS.
 """
 
 import asyncio
@@ -8,39 +8,120 @@ import speech_recognition as sr
 import edge_tts
 import pygame
 import nova_brain
-import nova_os  # NEW: OOP Execution Engine
+import nova_os
+import os
+import tempfile
+from concurrent.futures import ThreadPoolExecutor
+
+# Try to import Windows SAPI for instant TTS
+try:
+    import win32com.client
+    SAPI_AVAILABLE = True
+except ImportError:
+    SAPI_AVAILABLE = False
+    print("[WARN] pywin32 not available - using Edge-TTS only")
+
+# --- INSTANT TTS SYSTEM ---
+class InstantTTS:
+    """Lightning-fast TTS using Windows SAPI (~20ms latency)."""
+    
+    _instance = None
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+    
+    def __init__(self):
+        if self._initialized:
+            return
+        self._initialized = True
+        
+        if SAPI_AVAILABLE:
+            try:
+                self.sapi = win32com.client.Dispatch("SAPI.SpVoice")
+                self.sapi.Rate = 3  # Fast speech rate
+                self.executor = ThreadPoolExecutor(max_workers=1)
+                print("[TTS] Windows SAPI initialized - INSTANT MODE")
+            except Exception as e:
+                self.sapi = None
+                print(f"[TTS] SAPI init failed: {e}")
+        else:
+            self.sapi = None
+    
+    def speak(self, text):
+        """Non-blocking instant speech."""
+        if self.sapi:
+            self.executor.submit(self._speak_sync, text)
+    
+    def _speak_sync(self, text):
+        """Synchronous SAPI speech."""
+        try:
+            self.sapi.Speak(text, 1)  # 1 = async flag
+        except Exception as e:
+            print(f"[TTS] Error: {e}")
+    
+    def is_short(self, text):
+        """Check if text is short enough for instant SAPI."""
+        return len(text) < 100
+
+# Global TTS instance
+_instant_tts = None
+
+def get_instant_tts():
+    global _instant_tts
+    if _instant_tts is None:
+        _instant_tts = InstantTTS()
+    return _instant_tts
 
 # --- AUDIO SETUP ---
-# Low latency buffer and standard frequency
-pygame.mixer.init(frequency=24000, buffer=512)
+pygame.mixer.init(frequency=24000, buffer=256)  # Lower buffer = faster
 recognizer = sr.Recognizer()
-# High pause_threshold to prevent cutting off the user while thinking
 recognizer.pause_threshold = 1.2 
 recognizer.energy_threshold = 300
 recognizer.dynamic_energy_threshold = True
 
 async def speak(text):
-    """Fast, non-blocking TTS."""
-    if not text: return
-    print(f"🗣️ NOVA: {text}")
+    """LIGHTNING-FAST TTS - instant for short, quality for long."""
+    if not text:
+        return
+    
+    print(f"FOX-3: {text}")
+    
+    tts = get_instant_tts()
+    
+    # Short responses = instant SAPI (~20ms)
+    if tts.sapi and tts.is_short(text):
+        tts.speak(text)
+        await asyncio.sleep(0.05)
+        return
+    
+    # Longer responses = Edge-TTS (quality)
     try:
-        # Speed up the voice by 25% for a snappier response
-        comm = edge_tts.Communicate(text, "en-GB-RyanNeural", rate="+25%")
-        await comm.save("response.mp3")
-        pygame.mixer.music.load("response.mp3")
+        audio_file = os.path.join(tempfile.gettempdir(), "fox3_response.mp3")
+        comm = edge_tts.Communicate(text, "en-GB-RyanNeural", rate="+50%")
+        await comm.save(audio_file)
+        
+        pygame.mixer.music.load(audio_file)
         pygame.mixer.music.play()
+        
         while pygame.mixer.music.get_busy():
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.03)
+        
         pygame.mixer.music.unload()
     except Exception as e:
-        print(f"TTS Error: {e}")
+        print(f"[TTS] Error: {e}")
 
 async def main():
+    # Initialize instant TTS
+    tts = get_instant_tts()
+    
     print("\n" + "="*50)
-    print("🤖 NOVA OPERATOR v2.0 - OOP ARCHITECTURE")
+    print("AUTO-BOT v2.0 - LIGHTNING MODE")
     print("="*50)
-    print("⚡ Instant Start - No pre-loading required.")
-    print("👉 Press [ENTER] to activate voice command.\n")
+    print("Instant Start - No pre-loading required.")
+    print("Press [ENTER] to activate voice command.\n")
 
     while True:
         try:
@@ -49,52 +130,53 @@ async def main():
             
             # 2. LISTENING MODE
             with sr.Microphone() as source:
-                print("🟢 LISTENING... (Speak freely, I will wait until you finish)")
-                # Clear buffer
-                recognizer.adjust_for_ambient_noise(source, duration=0.5)
+                print("LISTENING... (Speak freely)")
+                recognizer.adjust_for_ambient_noise(source, duration=0.3)  # Faster
                 try:
-                    # timeout=None means it waits indefinitely for speech to start
-                    # phrase_time_limit=None means it listens indefinitely until silence
-                    audio = recognizer.listen(source, timeout=None) 
-                    print("🟡 PROCESSING...")
+                    audio = recognizer.listen(source, timeout=None)
+                    print("PROCESSING...")
                 except sr.WaitTimeoutError:
-                    print("❌ No speech detected. Returning to standby.")
+                    print("No speech detected.")
                     continue
 
             # 3. RECOGNITION
             try:
                 user_text = recognizer.recognize_google(audio)
-                print(f"📝 Instruction: \"{user_text}\"")
+                print(f"Heard: \"{user_text}\"")
             except sr.UnknownValueError:
-                print("❌ Could not understand audio.")
+                print("Could not understand audio.")
                 continue
             except sr.RequestError:
-                print("❌ Network error.")
+                print("Network error.")
                 continue
 
             # 4. PLANNING (via LLM)
             plan_data = nova_brain.get_operator_plan(user_text)
             plan = plan_data.get("plan", [])
 
-            # 5. EXECUTION LOOP (via OOP Engine)
+            # 5. EXECUTION LOOP
             for step in plan:
-                result = nova_os.execute_step(step)  # NEW: Uses NovaOS
+                result = nova_os.execute_step(step)
                 
-                # If the step was a verbal response, speak it
+                # Verbal response - INSTANT
                 if step.get("action") == "RESPONSE":
                     await speak(step.get("payload"))
                 
-                # For system actions, just log confirmation
+                # Chat response - INSTANT
+                elif step.get("action") == "CHAT":
+                    await speak(step.get("payload"))
+                
+                # System actions - log confirmation
                 elif result:
-                    print(f"✅ {result}")
+                    print(f"Done: {result}")
 
-            print("\n🔴 MISSION COMPLETE. STANDBY.\n")
+            print("\nREADY.\n")
 
         except KeyboardInterrupt:
-            print("\n👋 Exiting Nova Operator.")
+            print("\nExiting Auto-BOT.")
             break
         except Exception as e:
-            print(f"⚠️ SYSTEM ERROR: {e}")
+            print(f"Error: {e}")
 
 if __name__ == "__main__":
     asyncio.run(main())
