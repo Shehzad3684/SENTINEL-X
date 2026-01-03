@@ -362,6 +362,43 @@ class NovaOS:
             
             print(f"   ✅ Navigated to {site_name}.")
             return f"Opened {site_name}."
+
+    def open_direct_url(self, url):
+        """
+        Direct URL Navigation - No guessing, no searching.
+        Opens the exact URL provided by Sentinel Core.
+        Reuses existing browser tab if possible.
+        """
+        print(f"🎯 DIRECT URL: '{url}'")
+        
+        # STATE CHECK PROTOCOL: Ensure Brave is open, active, and maximized
+        if not self._ensure_window_state("Brave"):
+            return "Could not open browser."
+        
+        # Open new tab
+        self.press('ctrl', 't')
+        self.wait(0.4)
+        
+        # Focus address bar
+        self.press('ctrl', 'l')
+        self.wait(0.2)
+        
+        # Type exact URL
+        self.write(url, interval=0.01)
+        self.wait(0.1)
+        self.press('enter')
+        
+        # Extract site name from URL for response
+        try:
+            from urllib.parse import urlparse
+            domain = urlparse(url).netloc.replace("www.", "")
+            site_name = domain.split(".")[0].capitalize()
+        except:
+            site_name = url
+        
+        self.wait(1.5)
+        print(f"   ✅ Opened {url}")
+        return f"Opening {site_name}."
     
     def download_file(self, app_name):
         """
@@ -957,6 +994,10 @@ class NovaOS:
             # 3. BROWSER CONTROL (Smart Search)
             elif action == "BROWSER":
                 return self.smart_browse(payload)
+            
+            # 3.5. BROWSER_DIRECT - Open exact URL (from Sentinel Core)
+            elif action == "BROWSER_DIRECT":
+                return self.open_direct_url(payload)
             
             # 4. MUSIC CONTROL (YouTube)
             elif action == "PLAY_MUSIC":
