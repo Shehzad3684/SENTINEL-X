@@ -269,7 +269,7 @@ class LivingOrb(tk.Canvas):
     Responds dynamically to system state and audio input.
     """
     
-    def __init__(self, parent, size=350, **kwargs):
+    def __init__(self, parent, size=450, **kwargs):
         super().__init__(parent, width=size, height=size,
                         bg=Theme.BG_PRIMARY, highlightthickness=0, **kwargs)
         
@@ -315,9 +315,9 @@ class LivingOrb(tk.Canvas):
         for _ in range(count):
             self.particles.append({
                 'angle': random.uniform(0, 2 * math.pi),
-                'radius': random.uniform(80, 180),
+                'radius': random.uniform(100, 200),
                 'speed': random.uniform(0.002, 0.012),
-                'size': random.uniform(1, 3),
+                'size': random.uniform(1.5, 4),
                 'offset': random.uniform(0, 2 * math.pi),
                 'layer': random.randint(0, 2),
                 'brightness': random.uniform(0.3, 1.0)
@@ -330,8 +330,8 @@ class LivingOrb(tk.Canvas):
             angle = (2 * math.pi * i) / count
             self.ring_particles.append({
                 'base_angle': angle,
-                'radius': random.uniform(100, 140),
-                'size': random.uniform(0.5, 2),
+                'radius': random.uniform(120, 170),
+                'size': random.uniform(1, 3),
                 'speed': random.uniform(0.3, 0.8),
                 'z': random.uniform(-0.3, 0.3)  # 3D depth
             })
@@ -422,8 +422,8 @@ class LivingOrb(tk.Canvas):
         pulse = (math.sin(self.time * 1.2) + 1) / 2
         
         for i in range(6, 0, -1):
-            radius = 130 + i * 12 + pulse * 8 + self.audio_level * 20
-            alpha = 0.06 * (7 - i) / 6
+            radius = 150 + i * 15 + pulse * 10 + self.audio_level * 25
+            alpha = 0.08 * (7 - i) / 6
             color = self._lerp_color(Theme.BG_PRIMARY, colors[0], alpha)
             self.create_oval(
                 self.cx - radius, self.cy - radius,
@@ -453,8 +453,8 @@ class LivingOrb(tk.Canvas):
     
     def _draw_saturn_rings_back(self, colors):
         """Back portion of Saturn-style rings (behind orb)"""
-        ring_tilt = 0.3  # Tilt angle
-        base_radius = 110 + self.audio_level * 15
+        ring_tilt = 0.35  # Tilt angle
+        base_radius = 140 + self.audio_level * 20
         
         for p in self.ring_particles:
             if p['z'] < 0:  # Back particles only
@@ -462,8 +462,8 @@ class LivingOrb(tk.Canvas):
     
     def _draw_saturn_rings_front(self, colors):
         """Front portion of Saturn-style rings (in front of orb)"""
-        ring_tilt = 0.3
-        base_radius = 110 + self.audio_level * 15
+        ring_tilt = 0.35
+        base_radius = 140 + self.audio_level * 20
         
         for p in self.ring_particles:
             if p['z'] >= 0:  # Front particles only
@@ -490,8 +490,8 @@ class LivingOrb(tk.Canvas):
     
     def _draw_core(self, colors):
         """Main orb core with gradient"""
-        pulse = math.sin(self.time * 1.2) * 4 + self.audio_level * 12
-        base_radius = 55 + pulse
+        pulse = math.sin(self.time * 1.2) * 6 + self.audio_level * 15
+        base_radius = 75 + pulse
         
         # Gradient layers
         layers = 15
@@ -515,9 +515,9 @@ class LivingOrb(tk.Canvas):
     def _draw_inner_rings(self, colors):
         """Rotating segmented inner rings"""
         configs = [
-            {'radius': 42, 'segments': 6, 'speed': 0.6, 'width': 2, 'gap': 0.3},
-            {'radius': 32, 'segments': 8, 'speed': -0.9, 'width': 1.5, 'gap': 0.25},
-            {'radius': 22, 'segments': 4, 'speed': 1.2, 'width': 2, 'gap': 0.4},
+            {'radius': 58, 'segments': 6, 'speed': 0.6, 'width': 2.5, 'gap': 0.3},
+            {'radius': 45, 'segments': 8, 'speed': -0.9, 'width': 2, 'gap': 0.25},
+            {'radius': 32, 'segments': 4, 'speed': 1.2, 'width': 2.5, 'gap': 0.4},
         ]
         
         for ring in configs:
@@ -560,12 +560,12 @@ class LivingOrb(tk.Canvas):
         
         # Ambient ripples
         if random.random() < 0.008 + self.audio_level * 0.02:
-            self.waves.append({'radius': 55, 'alpha': 0.3, 'width': 1.5})
+            self.waves.append({'radius': 75, 'alpha': 0.3, 'width': 2})
     
     def _draw_center_point(self, colors):
         """Bright center core"""
         pulse = (math.sin(self.time * 2) + 1) / 2
-        radius = 10 + pulse * 4 + self.audio_level * 6
+        radius = 14 + pulse * 6 + self.audio_level * 8
         
         # Glow layers
         for i in range(4, 0, -1):
@@ -676,8 +676,8 @@ class IconSidebar(tk.Frame):
     
     def _create_icon_button(self, action_id):
         """Create an icon button with hover label"""
-        container = tk.Frame(self, bg=Theme.BG_GLASS)
-        container.pack(fill="x", pady=3)
+        container = tk.Frame(self, bg=Theme.BG_GLASS, cursor="hand2")
+        container.pack(fill="x", pady=5)
         
         # Accent strip (shown on hover/active)
         accent = tk.Frame(container, bg=Theme.BG_GLASS, width=3)
@@ -687,14 +687,14 @@ class IconSidebar(tk.Frame):
         btn = tk.Label(
             container,
             text=self.ICONS.get(action_id, '●'),
-            font=("Segoe UI Emoji", 18),
+            font=("Segoe UI Emoji", 20),
             bg=Theme.BG_GLASS,
             fg=Theme.TEXT_SECONDARY,
             width=3,
             height=2,
             cursor="hand2"
         )
-        btn.pack(side="left", padx=(5, 0))
+        btn.pack(side="left", padx=(8, 0))
         
         # Hover label
         label = tk.Label(
@@ -704,6 +704,9 @@ class IconSidebar(tk.Frame):
             bg=Theme.BG_GLASS,
             fg=Theme.TEXT_MUTED
         )
+        
+        # Store callback reference
+        container.callback = None
         
         # Hover effects
         def on_enter(e, b=btn, l=label, a=accent):
@@ -717,17 +720,25 @@ class IconSidebar(tk.Frame):
                 a.config(bg=Theme.BG_GLASS)
             l.pack_forget()
         
+        def on_click(e, c=container):
+            if c.callback:
+                c.callback()
+        
         btn.bind("<Enter>", on_enter)
         btn.bind("<Leave>", on_leave)
+        btn.bind("<Button-1>", on_click)
         container.bind("<Enter>", on_enter)
         container.bind("<Leave>", on_leave)
+        container.bind("<Button-1>", on_click)
+        accent.bind("<Button-1>", on_click)
         
         self.buttons[action_id] = btn
         self.labels[action_id] = label
+        self.buttons[action_id].container = container
     
     def bind_action(self, action_id, callback):
         if action_id in self.buttons:
-            self.buttons[action_id].bind("<Button-1>", lambda e: callback())
+            self.buttons[action_id].container.callback = callback
 
 
 # ==================== TACTICAL LOG PANEL ====================
@@ -870,12 +881,13 @@ class TacticalLogPanel(tk.Frame):
         # Message
         tk.Label(
             entry,
-            text=message[:80] + "..." if len(message) > 80 else message,
+            text=message[:100] + "..." if len(message) > 100 else message,
             font=Theme.FONT_LOG_TEXT,
             bg=Theme.BG_PRIMARY,
             fg=msg_color,
-            anchor="w"
-        ).pack(side="left", fill="x")
+            anchor="w",
+            wraplength=320
+        ).pack(side="left", fill="x", expand=True)
         
         self.log_entries.append(entry)
         
@@ -1010,8 +1022,8 @@ class SentinelXApp:
         content.pack(fill="both", expand=True, padx=20, pady=10)
         
         # Left sidebar - narrow icon panel
-        self.sidebar = IconSidebar(content, width=70)
-        self.sidebar.pack(side="left", fill="y", padx=(0, 15))
+        self.sidebar = IconSidebar(content, width=80)
+        self.sidebar.pack(side="left", fill="y", padx=(0, 20))
         self._bind_actions()
         
         # Center - Orb and waveform
@@ -1026,17 +1038,17 @@ class SentinelXApp:
         self.status_display.pack(pady=(0, 20))
         
         # Orb
-        orb_size = min(350, self.screen_height - 350)
+        orb_size = min(450, self.screen_height - 280)
         self.orb = LivingOrb(orb_container, size=orb_size)
         self.orb.pack()
         self.orb.on_click = self._toggle_bot
         
         # Waveform below orb
-        self.waveform = WaveformVisualizer(orb_container, width=280, height=35)
-        self.waveform.pack(pady=(25, 0))
+        self.waveform = WaveformVisualizer(orb_container, width=350, height=40)
+        self.waveform.pack(pady=(20, 0))
         
         # Right panel - Log
-        right_container = tk.Frame(content, bg=Theme.BG_PRIMARY, width=340)
+        right_container = tk.Frame(content, bg=Theme.BG_PRIMARY, width=420)
         right_container.pack(side="right", fill="y", padx=(15, 0))
         right_container.pack_propagate(False)
         
