@@ -999,19 +999,14 @@ class SentinelXApp:
         self.bg.place(relx=0, rely=0, relwidth=1, relheight=1)
         
         # Main container
-        main = tk.Frame(self.root, bg='')
+        main = tk.Frame(self.root, bg=Theme.BG_PRIMARY)
         main.place(relx=0, rely=0, relwidth=1, relheight=1)
-        main.config(bg=Theme.BG_PRIMARY)
-        main.lower()
-        
-        # Make main transparent over background
-        main.config(bg='')
         
         # Header
         self._build_header(main)
         
         # Content area
-        content = tk.Frame(main, bg='')
+        content = tk.Frame(main, bg=Theme.BG_PRIMARY)
         content.pack(fill="both", expand=True, padx=20, pady=10)
         
         # Left sidebar - narrow icon panel
@@ -1020,10 +1015,10 @@ class SentinelXApp:
         self._bind_actions()
         
         # Center - Orb and waveform
-        center = tk.Frame(content, bg='')
+        center = tk.Frame(content, bg=Theme.BG_PRIMARY)
         center.pack(side="left", fill="both", expand=True)
         
-        orb_container = tk.Frame(center, bg='')
+        orb_container = tk.Frame(center, bg=Theme.BG_PRIMARY)
         orb_container.pack(expand=True)
         
         # Status above orb
@@ -1041,7 +1036,7 @@ class SentinelXApp:
         self.waveform.pack(pady=(25, 0))
         
         # Right panel - Log
-        right_container = tk.Frame(content, bg='', width=340)
+        right_container = tk.Frame(content, bg=Theme.BG_PRIMARY, width=340)
         right_container.pack(side="right", fill="y", padx=(15, 0))
         right_container.pack_propagate(False)
         
@@ -1055,18 +1050,18 @@ class SentinelXApp:
         self.root.bind('<space>', lambda e: self._toggle_bot())
     
     def _build_header(self, parent):
-        header = tk.Frame(parent, bg='')
+        header = tk.Frame(parent, bg=Theme.BG_PRIMARY)
         header.pack(fill="x", padx=25, pady=(15, 0))
         
         # Title
-        title_frame = tk.Frame(header, bg='')
+        title_frame = tk.Frame(header, bg=Theme.BG_PRIMARY)
         title_frame.pack(side="left")
         
         tk.Label(
             title_frame,
             text="SENTINEL",
             font=Theme.FONT_TITLE,
-            bg='',
+            bg=Theme.BG_PRIMARY,
             fg=Theme.TEXT_PRIMARY
         ).pack(side="left")
         
@@ -1074,7 +1069,7 @@ class SentinelXApp:
             title_frame,
             text="-X",
             font=Theme.FONT_TITLE_ACCENT,
-            bg='',
+            bg=Theme.BG_PRIMARY,
             fg=Theme.ACCENT_PRIMARY
         ).pack(side="left")
         
@@ -1082,18 +1077,18 @@ class SentinelXApp:
             title_frame,
             text="ADVANCED AI INTERFACE",
             font=Theme.FONT_SUBTITLE,
-            bg='',
+            bg=Theme.BG_PRIMARY,
             fg=Theme.TEXT_SECONDARY
         ).pack(side="left", padx=(20, 0), pady=(12, 0))
         
         # Clock
-        time_frame = tk.Frame(header, bg='')
+        time_frame = tk.Frame(header, bg=Theme.BG_PRIMARY)
         time_frame.pack(side="right")
         
         self.clock = tk.Label(
             time_frame,
             font=Theme.FONT_CLOCK,
-            bg='',
+            bg=Theme.BG_PRIMARY,
             fg=Theme.TEXT_SECONDARY
         )
         self.clock.pack(anchor="e")
@@ -1101,7 +1096,7 @@ class SentinelXApp:
         self.date = tk.Label(
             time_frame,
             font=Theme.FONT_DATE,
-            bg='',
+            bg=Theme.BG_PRIMARY,
             fg=Theme.TEXT_MUTED
         )
         self.date.pack(anchor="e")
@@ -1109,7 +1104,7 @@ class SentinelXApp:
         self._update_clock()
     
     def _build_footer(self, parent):
-        footer = tk.Frame(parent, bg='')
+        footer = tk.Frame(parent, bg=Theme.BG_PRIMARY)
         footer.pack(side="bottom", fill="x", padx=25, pady=(0, 12))
         
         # System stats on right
