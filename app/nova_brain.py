@@ -96,7 +96,9 @@ User: "explain how the internet works"
 {"plan": [{"action": "CHAT", "payload": "The internet is a global network of computers communicating via standardized protocols. Your request travels through routers as data packets, reaching servers that send back what you asked for. Simplified: digital mail at light speed."}]}
 
 User: "write an essay about artificial intelligence"
-{"plan": [{"action": "WRITE_ESSAY", "payload": "artificial intelligence"}, {"action": "RESPONSE", "payload": "Crafting your masterpiece. Stand by."}]}
+{"plan": [{"action": "RESPONSE", "payload": "Writing your essay. Give me a moment."}, {"action": "WRITE_ESSAY", "payload": "artificial intelligence"}]}
+
+NOTE: For WRITE_ESSAY, only output the topic in payload. NEVER output actual essay content - the system generates it automatically.
 
 User: "open youtube"
 {"plan": [{"action": "BROWSER_DIRECT", "payload": "https://www.youtube.com"}, {"action": "RESPONSE", "payload": "YouTube, coming up."}]}
@@ -278,19 +280,27 @@ class FastPath:
                     "target": song
                 }
         
-        # 9. Essay writing
-        essay_match = re.match(r'^(?:write|compose|create)\s+(?:an?\s+)?essay\s+(?:about|on|regarding)\s+(.+)$', text_clean)
-        if essay_match:
-            topic = essay_match.group(1).strip()
-            return {
-                "plan": [
-                    {"action": "RESPONSE", "payload": "Writing your essay. Give me a moment."},
-                    {"action": "WRITE_ESSAY", "payload": topic}
-                ],
-                "fast_path": True,
-                "intent": "write_essay",
-                "target": topic
-            }
+        # 9. Essay writing - more flexible matching
+        essay_patterns = [
+            r'^(?:write|compose|create)\s+(?:an?\s+)?essay\s+(?:about|on|regarding)\s+(.+?)(?:\s+in\s+word)?$',
+            r'^(?:write|compose|create)\s+(?:an?\s+)?essay\s+(?:about|on|regarding)\s+(.+)$',
+            r'essay\s+(?:about|on)\s+(.+?)(?:\s+in\s+word)?$',
+        ]
+        for pattern in essay_patterns:
+            essay_match = re.match(pattern, text_clean)
+            if essay_match:
+                topic = essay_match.group(1).strip()
+                # Remove trailing "in word" if present
+                topic = re.sub(r'\s+in\s+word$', '', topic)
+                return {
+                    "plan": [
+                        {"action": "RESPONSE", "payload": "Writing your essay. Give me a moment."},
+                        {"action": "WRITE_ESSAY", "payload": topic}
+                    ],
+                    "fast_path": True,
+                    "intent": "write_essay",
+                    "target": topic
+                }
         
         # 10. Screenshot
         if any(kw in text_clean for kw in ['screenshot', 'screen shot', 'capture screen', 'take a picture']):
@@ -428,6 +438,29 @@ def _get_llm():
     return _llm
 
 
+def _filter_long_content(plan: list) -> list:
+    """
+    Filter out long content from CHAT actions.
+    Prevents essay content from being spoken.
+    """
+    MAX_SPEAKABLE_WORDS = 50
+    
+    filtered = []
+    for action in plan:
+        if action.get("action") in ["CHAT", "RESPONSE"]:
+            payload = action.get("payload", "")
+            word_count = len(payload.split())
+            
+            # If too long, skip it (it's probably essay content)
+            if word_count > MAX_SPEAKABLE_WORDS:
+                print(f"[FILTER] Skipping long content ({word_count} words)")
+                continue
+            
+        filtered.append(action)
+    
+    return filtered
+
+
 def get_operator_plan(user_text: str) -> dict:
     """
     MAIN ENTRY POINT - Process user command.
@@ -436,7 +469,7 @@ def get_operator_plan(user_text: str) -> dict:
     1. Sentinel Core pre-check (safety, duplicates)
     2. Fast Path (local, ~0ms)
     3. LLM Fallback (complex commands)
-    4. Post-validation
+    4. Post-validation (filter long content)
     """
     sentinel = _get_sentinel()
     
@@ -460,13 +493,13 @@ def get_operator_plan(user_text: str) -> dict:
             pass
         else:
             print(f"[SENTINEL] Handled: {sentinel_result['intent']}")
-            return {"plan": sentinel_result["plan"]}
+            return {"plan": _filter_long_content(sentinel_result["plan"])}
     
     # 2. Try Fast Path
     fast_result = FastPath.process(user_text)
     if fast_result:
         print(f"[FAST] {fast_result.get('intent', 'matched')}: {user_text}")
-        return {"plan": fast_result["plan"]}
+        return {"plan": _filter_long_content(fast_result["plan"])}
     
     # 3. LLM Fallback
     print(f"[LLM] Processing: {user_text}")
@@ -485,7 +518,8 @@ def get_operator_plan(user_text: str) -> dict:
         
         llm_result["plan"] = safe_plan
     
-    return {"plan": llm_result.get("plan", [])}
+    # Filter out long content (prevents essay content from being spoken)
+    return {"plan": _filter_long_content(llm_result.get("plan", []))}
 
 
 # =============================================================================

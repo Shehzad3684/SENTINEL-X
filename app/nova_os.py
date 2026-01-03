@@ -740,14 +740,14 @@ class NovaOS:
         # Method 1: Start menu search
         print("   -> Method 1: Start menu search...")
         self.press('win')
-        time.sleep(0.8)
-        pyautogui.write("Word", interval=0.08)
         time.sleep(1.0)
+        pyautogui.write("Microsoft Word", interval=0.05)
+        time.sleep(1.5)
         self.press('enter')
         
         # Wait for Word to load
-        print("   -> Waiting 5s for Word to launch...")
-        time.sleep(5.0)
+        print("   -> Waiting 6s for Word to launch...")
+        time.sleep(6.0)
         
         # Check if Word opened
         for win in gw.getAllWindows():
@@ -760,32 +760,82 @@ class NovaOS:
             # Method 2: Direct winword.exe
             print("   -> Method 2: Direct winword.exe...")
             try:
-                subprocess.Popen(['winword.exe'])
-                time.sleep(5.0)
-                launch_success = True
-            except:
-                pass
+                # Try common paths
+                word_paths = [
+                    'winword.exe',
+                    r'C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE',
+                    r'C:\Program Files (x86)\Microsoft Office\root\Office16\WINWORD.EXE',
+                ]
+                for path in word_paths:
+                    try:
+                        subprocess.Popen([path])
+                        print(f"   -> Launched: {path}")
+                        time.sleep(6.0)
+                        
+                        # Verify it opened
+                        for win in gw.getAllWindows():
+                            if 'word' in win.title.lower():
+                                launch_success = True
+                                print(f"   -> Found Word window: '{win.title}'")
+                                break
+                        if launch_success:
+                            break
+                    except FileNotFoundError:
+                        continue
+            except Exception as e:
+                print(f"   -> Method 2 failed: {e}")
         
         if not launch_success:
             print("   ❌ Could not launch Microsoft Word")
             return False
         
-        # Click Blank Document
-        print("   -> Clicking Blank Document...")
-        positions = [(0.16, 0.30), (0.12, 0.28), (0.20, 0.32)]
-        for px, py in positions:
-            click_x = int(w * px)
-            click_y = int(h * py)
-            pyautogui.click(click_x, click_y)
-            time.sleep(0.3)
+        # Activate Word window
+        time.sleep(0.5)
+        for win in gw.getAllWindows():
+            if 'word' in win.title.lower():
+                try:
+                    win.activate()
+                    time.sleep(0.5)
+                except:
+                    pass
+                break
         
-        # Wait for document
-        print("   -> Waiting 3s for document to open...")
-        time.sleep(3.0)
+        # Click Blank Document - use keyboard as backup
+        print("   -> Opening blank document...")
         
-        # Click in document area
+        # Try keyboard shortcut first (Ctrl+N for new document)
+        # This works if Word is at home screen or has a document open
+        self.press('ctrl', 'n')
+        time.sleep(2.0)
+        
+        # Verify we have a document window
+        doc_found = False
+        for win in gw.getAllWindows():
+            title = win.title.lower()
+            if 'document' in title or '.docx' in title:
+                doc_found = True
+                print(f"   -> Document opened: '{win.title}'")
+                try:
+                    win.activate()
+                except:
+                    pass
+                break
+        
+        if not doc_found:
+            # Fallback: click Blank Document button
+            print("   -> Ctrl+N didn't work, clicking Blank Document...")
+            positions = [(0.16, 0.30), (0.12, 0.28), (0.20, 0.32), (0.18, 0.35)]
+            for px, py in positions:
+                click_x = int(w * px)
+                click_y = int(h * py)
+                pyautogui.click(click_x, click_y)
+                time.sleep(0.5)
+            
+            time.sleep(2.0)
+        
+        # Final check - click in document area
         print("   -> Clicking document area...")
-        pyautogui.click(int(w * 0.5), int(h * 0.5))
+        pyautogui.click(int(w * 0.5), int(h * 0.55))  # Below ribbon
         time.sleep(0.5)
         
         print("   ✅ Word ready!")

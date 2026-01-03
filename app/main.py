@@ -163,55 +163,32 @@ class NovaBotEngine:
         """Update status via callback."""
         self.status_callback(status)
     
-    async def speak(self, text):
+    async def speak(self, text, is_content=False):
         """
-        LIGHTNING-FAST TTS - Hybrid approach:
-        - Short responses (<10 words): Windows SAPI (~20ms)
-        - Longer responses: Edge-TTS streaming (better quality)
+        UNIFIED TTS - Single voice (Windows SAPI).
+        
+        Args:
+            text: Text to speak
+            is_content: If True, this is document content - DON'T speak it
         """
         if not text:
             return
         
         self.log(f"FOX-3: {text}")
         
-        # INSTANT PATH: Short responses use Windows SAPI
-        if self.instant_tts.is_short(text):
-            # Fire and forget - returns immediately
-            self.instant_tts.speak(text)
-            # Small delay to let audio start
-            await asyncio.sleep(0.05)
+        # NEVER speak document content (essays, etc.) - too long
+        if is_content:
             return
         
-        # QUALITY PATH: Longer responses use Edge-TTS
-        await self._speak_edge_tts(text)
-    
-    async def _speak_edge_tts(self, text):
-        """Edge-TTS for longer, quality responses."""
-        try:
-            audio_file = get_runtime_audio_file("response.mp3")
-            
-            # Clear voice at natural speed
-            comm = edge_tts.Communicate(text, "en-GB-RyanNeural", rate="+10%")
-            
-            # Stream directly to file
-            with open(audio_file, "wb") as f:
-                async for chunk in comm.stream():
-                    if chunk["type"] == "audio":
-                        f.write(chunk["data"])
-            
-            if not os.path.exists(audio_file) or os.path.getsize(audio_file) == 0:
-                return
-            
-            pygame.mixer.music.load(audio_file)
-            pygame.mixer.music.play()
-            
-            while pygame.mixer.music.get_busy():
-                await asyncio.sleep(0.03)  # Faster polling
-            
-            pygame.mixer.music.unload()
-            
-        except Exception as e:
-            self.log(f"TTS Error: {e}")
+        # Limit what we speak - max 50 words
+        words = text.split()
+        if len(words) > 50:
+            # Truncate and add summary
+            text = ' '.join(words[:15]) + '... Response logged.'
+        
+        # Single voice: Windows SAPI only
+        self.instant_tts.speak(text)
+        await asyncio.sleep(0.05)
     
     def speak_instant(self, text):
         """
