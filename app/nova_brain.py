@@ -284,8 +284,8 @@ class FastPath:
             topic = essay_match.group(1).strip()
             return {
                 "plan": [
-                    {"action": "WRITE_ESSAY", "payload": topic},
-                    {"action": "RESPONSE", "payload": Personality.get('essay')}
+                    {"action": "RESPONSE", "payload": "Writing your essay. Give me a moment."},
+                    {"action": "WRITE_ESSAY", "payload": topic}
                 ],
                 "fast_path": True,
                 "intent": "write_essay",

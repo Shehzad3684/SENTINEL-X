@@ -679,10 +679,7 @@ class NovaOS:
     def launch_word_robust(self):
         """
         Launch Microsoft Word and open a blank document.
-        Simple, reliable UI automation - no maximize commands.
-        
-        Returns:
-            True if Word is ready with blank document
+        Returns True only if Word is confirmed ready.
         """
         print("📝 WORD: Starting Word automation...")
         
@@ -693,78 +690,101 @@ class NovaOS:
             title = win.title.lower()
             if ('document' in title or '.docx' in title) and 'word' in title:
                 print(f"   ✅ Document already open: '{win.title}'")
-                # Activate window
                 try:
                     win.activate()
                     time.sleep(0.5)
-                except:
-                    pass
-                # Click document area to focus cursor
-                pyautogui.click(int(w * 0.5), int(h * 0.5))
-                time.sleep(0.3)
-                return True
+                    # Click document area to focus cursor
+                    pyautogui.click(int(w * 0.5), int(h * 0.5))
+                    time.sleep(0.3)
+                    return True
+                except Exception as e:
+                    print(f"   ⚠️ Could not activate: {e}")
         
         # ==================== CHECK IF WORD HOME SCREEN IS OPEN ====================
         for win in gw.getAllWindows():
             title = win.title.lower().strip()
             if title == 'word':
                 print(f"   -> Word home screen detected, clicking Blank Document...")
-                # Activate
                 try:
                     win.activate()
                     time.sleep(1.0)
                 except:
                     pass
                 
-                # NO Win+Up - just click Blank Document directly
-                # Use screen percentage instead of fixed pixels (more reliable)
-                click_x = int(w * 0.16)  # About 16% from left
-                click_y = int(h * 0.30)  # About 30% from top
-                print(f"   -> Clicking Blank Document at ({click_x}, {click_y})...")
-                pyautogui.click(click_x, click_y)
-                time.sleep(0.3)
-                pyautogui.click(click_x, click_y)  # Double click
+                # Click Blank Document (multiple attempts at different positions)
+                positions = [(0.16, 0.30), (0.12, 0.28), (0.20, 0.32)]
+                for px, py in positions:
+                    click_x = int(w * px)
+                    click_y = int(h * py)
+                    print(f"   -> Clicking at ({click_x}, {click_y})...")
+                    pyautogui.click(click_x, click_y)
+                    time.sleep(0.5)
                 
-                # Wait for document to open
-                print("   -> Waiting 3s for document to open...")
+                # Wait for document
+                print("   -> Waiting 3s for document...")
                 time.sleep(3.0)
                 
-                # Click in document area to focus cursor
+                # Click document area
                 pyautogui.click(int(w * 0.5), int(h * 0.5))
                 time.sleep(0.5)
                 
-                print("   ✅ Word ready!")
+                print("   ✅ Word ready from home screen!")
                 return True
         
         # ==================== WORD NOT OPEN - LAUNCH FRESH ====================
-        print("   -> Word not running, launching...")
+        print("   -> Word not running, launching fresh...")
         
-        # Launch via Start Menu
+        # Try multiple launch methods
+        launch_success = False
+        
+        # Method 1: Start menu search
+        print("   -> Method 1: Start menu search...")
         self.press('win')
-        time.sleep(0.5)
-        pyautogui.write("Word", interval=0.05)
-        time.sleep(0.5)
+        time.sleep(0.8)
+        pyautogui.write("Word", interval=0.08)
+        time.sleep(1.0)
         self.press('enter')
         
-        # Wait for Word to fully load (splash screen appears)
-        print("   -> Waiting 6s for Word to load...")
-        time.sleep(6.0)
+        # Wait for Word to load
+        print("   -> Waiting 5s for Word to launch...")
+        time.sleep(5.0)
         
-        # NO Win+Up - Word opens maximized by default
-        # Click Blank Document using screen percentage
-        click_x = int(w * 0.16)  # About 16% from left
-        click_y = int(h * 0.30)  # About 30% from top
-        print(f"   -> Clicking Blank Document at ({click_x}, {click_y})...")
-        pyautogui.click(click_x, click_y)
-        time.sleep(0.3)
-        pyautogui.click(click_x, click_y)  # Double click
+        # Check if Word opened
+        for win in gw.getAllWindows():
+            if 'word' in win.title.lower():
+                launch_success = True
+                print(f"   -> Found Word window: '{win.title}'")
+                break
         
-        # Wait for document to open
+        if not launch_success:
+            # Method 2: Direct winword.exe
+            print("   -> Method 2: Direct winword.exe...")
+            try:
+                subprocess.Popen(['winword.exe'])
+                time.sleep(5.0)
+                launch_success = True
+            except:
+                pass
+        
+        if not launch_success:
+            print("   ❌ Could not launch Microsoft Word")
+            return False
+        
+        # Click Blank Document
+        print("   -> Clicking Blank Document...")
+        positions = [(0.16, 0.30), (0.12, 0.28), (0.20, 0.32)]
+        for px, py in positions:
+            click_x = int(w * px)
+            click_y = int(h * py)
+            pyautogui.click(click_x, click_y)
+            time.sleep(0.3)
+        
+        # Wait for document
         print("   -> Waiting 3s for document to open...")
         time.sleep(3.0)
         
-        # Click in document area to focus cursor
-        print("   -> Clicking document area to focus cursor...")
+        # Click in document area
+        print("   -> Clicking document area...")
         pyautogui.click(int(w * 0.5), int(h * 0.5))
         time.sleep(0.5)
         
@@ -978,7 +998,31 @@ class NovaOS:
         print(f"📝 WORD: Full automation for '{topic}'...")
         
         # Launch Word (handles all states: not open, home screen, or document)
-        self.launch_word_robust()
+        word_ready = self.launch_word_robust()
+        
+        if not word_ready:
+            print("   ❌ ERROR: Failed to launch Microsoft Word")
+            return "ERROR: Could not open Microsoft Word. Please ensure Word is installed."
+        
+        # Verify Word is actually open before writing
+        time.sleep(1.0)
+        word_found = False
+        for win in gw.getAllWindows():
+            title = win.title.lower()
+            if 'word' in title or 'document' in title:
+                word_found = True
+                try:
+                    win.activate()
+                    time.sleep(0.5)
+                except:
+                    pass
+                break
+        
+        if not word_found:
+            print("   ❌ ERROR: Word window not detected after launch")
+            return "ERROR: Word did not open properly. Please try again."
+        
+        print(f"   ✅ Word verified open. Writing essay...")
         
         # Write the document
         return self.write_pro_document(topic, content_dict)

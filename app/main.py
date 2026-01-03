@@ -264,25 +264,35 @@ class NovaBotEngine:
                 plan_data = nova_brain.get_operator_plan(user_text)
                 plan = plan_data.get("plan", [])
                 
-                # EXECUTION LOOP
+                # EXECUTION LOOP - Speak FIRST, then execute
                 self.set_status("Executing...")
                 for step in plan:
                     if not self._running:
                         break
                     
+                    action = step.get("action")
+                    payload = step.get("payload")
+                    
+                    # INSTANT verbal responses - speak immediately
+                    if action == "RESPONSE":
+                        await self.speak(payload)
+                        continue  # Don't execute, just speak
+                    
+                    if action == "CHAT":
+                        await self.speak(payload)
+                        continue  # Don't execute, just speak
+                    
+                    # For all other actions, execute them
                     result = nova_os.execute_step(step)
                     
-                    # INSTANT response
-                    if step.get("action") == "RESPONSE":
-                        await self.speak(step.get("payload"))
-                    
-                    # INSTANT chat
-                    elif step.get("action") == "CHAT":
-                        await self.speak(step.get("payload"))
-                    
-                    # For system actions, just log confirmation
-                    elif result:
+                    # Log the result
+                    if result:
                         self.log(f"[OK] {result}")
+                        # Speak completion for long tasks
+                        if action == "WRITE_ESSAY" and "successfully" in result.lower():
+                            await self.speak("Essay complete. Check Word.")
+                        elif "ERROR" in result:
+                            await self.speak("Something went wrong. Check the log.")
                 
                 self.log("\n[READY] Awaiting next command.\n")
                 self.set_status("Ready")
